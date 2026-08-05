@@ -35,4 +35,4 @@ langchain4j:
       model-name: deepseek-v4-flash
       log-requests: true
       log-responses: true
-#      response-format: json_object
+      response-format: json_object
