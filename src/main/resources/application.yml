@@ -35,4 +35,9 @@ langchain4j:
       model-name: deepseek-v4-flash
       log-requests: true
       log-responses: true
-      response-format: json_object
+    streaming-chat-model:
+      base-url: ${DEEPSEEK_BASE_URL}
+      api-key: ${DEEPSEEK_API_KEY}
+      model-name: deepseek-v4-flash
+      log-requests: true
+      log-responses: true
