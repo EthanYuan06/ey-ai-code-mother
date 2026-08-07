@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
  * 文件写入工具
  * 将生成的代码存入本地
  */
+@Deprecated
 public class CodeFileSaver {
 
     // 文件保存根目录

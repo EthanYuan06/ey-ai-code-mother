@@ -31,7 +31,7 @@ class AiCodeGeneratorFacadeTest {
     @Test
     void generateAndSaveCodeStream() {
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(
-                "做个EthanYuan的工作记录小工具，代码不超过150行",
+                "做个登录页面，代码不超20行",
                 CodeGenTypeEnum.MULTI_FILE);
         // 阻塞等待所有数据收集完成
         List<String> result = codeStream.collectList().block();
