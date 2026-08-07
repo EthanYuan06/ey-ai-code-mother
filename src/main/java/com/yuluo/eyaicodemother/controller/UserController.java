@@ -10,7 +10,7 @@ import com.yuluo.eyaicodemother.constant.UserConstant;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
 import com.yuluo.eyaicodemother.exception.ThrowUtils;
-import com.yuluo.eyaicodemother.model.dto.*;
+import com.yuluo.eyaicodemother.model.dto.user.*;
 import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.vo.LoginUserVO;
 import com.yuluo.eyaicodemother.model.vo.UserVO;

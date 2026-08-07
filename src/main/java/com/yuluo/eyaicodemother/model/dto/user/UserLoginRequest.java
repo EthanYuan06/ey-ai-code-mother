@@ -1,4 +1,4 @@
-package com.yuluo.eyaicodemother.model.dto;
+package com.yuluo.eyaicodemother.model.dto.user;
 
 import lombok.Data;
 
