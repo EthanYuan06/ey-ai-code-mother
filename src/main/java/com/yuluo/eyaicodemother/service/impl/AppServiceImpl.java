@@ -5,8 +5,10 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
+import com.yuluo.eyaicodemother.core.AiCodeGeneratorFacade;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
+import com.yuluo.eyaicodemother.exception.ThrowUtils;
 import com.yuluo.eyaicodemother.mapper.AppMapper;
 import com.yuluo.eyaicodemother.model.dto.app.AppQueryRequest;
 import com.yuluo.eyaicodemother.model.entity.App;
@@ -18,6 +20,7 @@ import com.yuluo.eyaicodemother.service.AppService;
 import com.yuluo.eyaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +38,26 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
 
     @Resource
     private UserService userService;
+    @Resource
+    private AiCodeGeneratorFacade aiCodeGeneratorFacade;
+
+    @Override
+    public Flux<String> chatToGenCode(Long appId, String message, User loginUser){
+        // 参数校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不合法");
+        ThrowUtils.throwIf(StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "用户消息不能为空");
+        // 查询应用信息
+        App app = this.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 权限校验：只有创建用户本人才能生成代码
+        ThrowUtils.throwIf(!app.getUserId().equals(loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限生成代码");
+        // 获取代码生成类型
+        String codeGenType = app.getCodeGenType();
+        CodeGenTypeEnum codeGenTypeEnum = CodeGenTypeEnum.getEnumByValue(codeGenType);
+        if (codeGenTypeEnum == null)
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "未知的代码生成类型");
+        return aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
+    }
 
     @Override
     public void validApp(App app, boolean add) {

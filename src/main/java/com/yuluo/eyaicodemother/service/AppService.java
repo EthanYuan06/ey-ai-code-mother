@@ -4,7 +4,9 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;
 import com.yuluo.eyaicodemother.model.dto.app.AppQueryRequest;
 import com.yuluo.eyaicodemother.model.entity.App;
+import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.vo.AppVO;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -14,6 +16,8 @@ import java.util.List;
  * @author EthanYuan
  */
 public interface AppService extends IService<App> {
+
+    Flux<String> chatToGenCode(Long appId, String message, User loginUser);
 
     /**
      * 校验应用参数

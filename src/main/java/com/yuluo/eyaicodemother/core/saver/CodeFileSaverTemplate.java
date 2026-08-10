@@ -1,10 +1,10 @@
 package com.yuluo.eyaicodemother.core.saver;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
+import com.yuluo.eyaicodemother.exception.ThrowUtils;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
 
 import java.io.File;
@@ -22,13 +22,14 @@ public abstract class CodeFileSaverTemplate<T> {
      * 模板方法：保存代码标准流程
      *
      * @param result 代码解析结果
+     * @param appId 应用 ID
      * @return 保存文件
      */
-    public final File saveCode(T result){
+    public final File saveCode(T result, Long appId){
         // 验证输入
         validateInput(result);
         // 构建保存路径
-        String baseDirPath = buildUniqueDir();
+        String baseDirPath = buildUniqueDir(appId);
         // 保存文件
         saveFiles(result, baseDirPath);
         // 返回目录文件对象
@@ -56,11 +57,12 @@ public abstract class CodeFileSaverTemplate<T> {
     }
 
     /**
-     * 构建唯一目录路径：tmp/code_output/bizType_雪花ID
+     * 构建唯一目录路径：tmp/code_output/appId
      */
-    protected String buildUniqueDir() {
+    protected String buildUniqueDir(Long appId) {
+        ThrowUtils.throwIf(appId == null, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
         String codeType = getCodeType().getValue();
-        String uniqueDirName = StrUtil.format("{}_{}", codeType, IdUtil.getSnowflakeNextIdStr());
+        String uniqueDirName = StrUtil.format("{}_{}", codeType, appId);
         String dirPath = FILE_SAVE_ROOT_DIR + File.separator + uniqueDirName;
         FileUtil.mkdir(dirPath);
         return dirPath;
