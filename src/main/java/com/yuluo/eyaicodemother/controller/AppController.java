@@ -2,6 +2,7 @@ package com.yuluo.eyaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.yuluo.eyaicodemother.annotation.AuthCheck;
@@ -13,10 +14,7 @@ import com.yuluo.eyaicodemother.constant.UserConstant;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
 import com.yuluo.eyaicodemother.exception.ThrowUtils;
-import com.yuluo.eyaicodemother.model.dto.app.AppAddRequest;
-import com.yuluo.eyaicodemother.model.dto.app.AppAdminUpdateRequest;
-import com.yuluo.eyaicodemother.model.dto.app.AppQueryRequest;
-import com.yuluo.eyaicodemother.model.dto.app.AppUpdateRequest;
+import com.yuluo.eyaicodemother.model.dto.app.*;
 import com.yuluo.eyaicodemother.model.entity.App;
 import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.vo.AppVO;
@@ -27,11 +25,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 应用 控制层。
@@ -50,7 +51,7 @@ public class AppController {
     private UserService userService;
 
     /**
-     * 应用聊天生成代码（流式 SSE）
+     * 对话生成应用代码（流式 SSE）
      *
      * @param appId   应用 ID
      * @param message 用户消息
@@ -58,7 +59,8 @@ public class AppController {
      * @return 生成结果流
      */
     @GetMapping(value = "/chat/gen/code", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> chatToGenCode(@RequestParam Long appId,
+    @Operation(summary = "对话生成应用代码（流式 SSE）")
+    public Flux<ServerSentEvent<String>> chatToGenCode(@RequestParam Long appId,
                                       @RequestParam String message,
                                       HttpServletRequest request) {
         // 参数校验
@@ -67,9 +69,25 @@ public class AppController {
         // 获取当前登录用户
         User loginUser = userService.getLoginUser(request);
         // 调用服务生成代码（流式）
-        return appService.chatToGenCode(appId, message, loginUser);
+        Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
+        // 将每个chunk转换为SSE格式
+        return contentFlux.map(
+                chunk -> {
+                    // 内容包装为JSON对象
+                    Map<String, String> wrapper = Map.of("d", chunk);
+                    String jsonStr = JSONUtil.toJsonStr(wrapper);
+                    return ServerSentEvent.<String>builder()
+                            .data(jsonStr)
+                            .build();
+                }
+        ).concatWith(Mono.just(
+                // 发送结束事件
+                ServerSentEvent.<String>builder()
+                        .event("done")
+                        .data("")
+                        .build()
+        ));
     }
-
 
     /**
      * 创建应用
@@ -90,6 +108,27 @@ public class AppController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(app.getId());
     }
+
+    /**
+     * 应用部署
+     *
+     * @param appDeployRequest 部署请求
+     * @param request          请求
+     * @return 部署 URL
+     */
+    @PostMapping("/deploy")
+    @Operation(summary = "应用部署")
+    public BaseResponse<String> deployApp(@RequestBody AppDeployRequest appDeployRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(appDeployRequest == null, ErrorCode.PARAMS_ERROR);
+        Long appId = appDeployRequest.getAppId();
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用 ID 不能为空");
+        // 获取当前登录用户
+        User loginUser = userService.getLoginUser(request);
+        // 调用服务部署应用
+        String deployUrl = appService.deployApp(appId, loginUser);
+        return ResultUtils.success(deployUrl);
+    }
+
 
     /**
      * 更新应用（用户只能更新自己的应用）
