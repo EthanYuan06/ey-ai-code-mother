@@ -7,6 +7,12 @@ spring:
     url: jdbc:mysql://localhost:3306/code_mother
     username: root
     password: 1234
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      ttl: 3600
 server:
   port: 8123
   servlet:

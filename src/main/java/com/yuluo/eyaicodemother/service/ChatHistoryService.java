@@ -6,6 +6,7 @@ import com.mybatisflex.core.service.IService;
 import com.yuluo.eyaicodemother.model.dto.chathistory.ChatHistoryQueryRequest;
 import com.yuluo.eyaicodemother.model.entity.ChatHistory;
 import com.yuluo.eyaicodemother.model.entity.User;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 
 import java.time.LocalDateTime;
 
@@ -15,6 +16,16 @@ import java.time.LocalDateTime;
  * @author EthanYuan
  */
 public interface ChatHistoryService extends IService<ChatHistory> {
+
+    /**
+     * 从数据库加载历史对话到内存
+     *
+     * @param appId 应用id
+     * @param chatMemory 对话记忆
+     * @param maxCount 最大加载数量
+     * @return 加载数量
+     */
+    int loadChatHistoryToMemory(Long appId, MessageWindowChatMemory chatMemory, int maxCount);
 
     /**
      * 根据应用id分页获取对话消息

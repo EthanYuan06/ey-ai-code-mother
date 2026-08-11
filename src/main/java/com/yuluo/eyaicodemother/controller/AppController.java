@@ -17,6 +17,7 @@ import com.yuluo.eyaicodemother.exception.ThrowUtils;
 import com.yuluo.eyaicodemother.model.dto.app.*;
 import com.yuluo.eyaicodemother.model.entity.App;
 import com.yuluo.eyaicodemother.model.entity.User;
+import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
 import com.yuluo.eyaicodemother.model.vo.AppVO;
 import com.yuluo.eyaicodemother.service.AppService;
 import com.yuluo.eyaicodemother.service.UserService;
@@ -101,6 +102,10 @@ public class AppController {
         App app = new App();
         BeanUtil.copyProperties(appAddRequest, app);
         app.setUserId(loginUser.getId());
+        // 暂时设置应用名称为初始化提示词的前12个字符
+        app.setAppName(appAddRequest.getInitPrompt().substring(0, Math.min(appAddRequest.getInitPrompt().length(), 12)));
+        // 暂时设置代码生成类型为多文件
+        app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
         app.setEditTime(LocalDateTime.now());
         // 参数校验
         appService.validApp(app, true);
