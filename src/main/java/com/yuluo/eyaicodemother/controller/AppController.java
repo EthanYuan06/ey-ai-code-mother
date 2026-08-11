@@ -70,7 +70,7 @@ public class AppController {
         User loginUser = userService.getLoginUser(request);
         // 调用服务生成代码（流式）
         Flux<String> contentFlux = appService.chatToGenCode(appId, message, loginUser);
-        // 将每个chunk转换为SSE格式
+        // 将每个chunk转换JSON字符串，并封装为为SSE格式返回
         return contentFlux.map(
                 chunk -> {
                     // 内容包装为JSON对象
