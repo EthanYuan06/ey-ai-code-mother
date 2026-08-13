@@ -1,14 +1,20 @@
 package com.yuluo.eyaicodemother.core;
 
+import cn.hutool.json.JSONUtil;
 import com.yuluo.eyaicodemother.ai.AiCodeGeneratorService;
 import com.yuluo.eyaicodemother.ai.AiCodeGeneratorServiceFactory;
 import com.yuluo.eyaicodemother.ai.model.HtmlCodeResult;
 import com.yuluo.eyaicodemother.ai.model.MultiFileCodeResult;
+import com.yuluo.eyaicodemother.ai.model.message.AiResponseMessage;
+import com.yuluo.eyaicodemother.ai.model.message.ToolExecutedMessage;
+import com.yuluo.eyaicodemother.ai.model.message.ToolRequestMessage;
 import com.yuluo.eyaicodemother.core.parser.CodeParserExecutor;
 import com.yuluo.eyaicodemother.core.saver.CodeFileSaverExecutor;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -51,9 +57,8 @@ public class AiCodeGeneratorFacade {
                 yield processCodeStream(result, CodeGenTypeEnum.MULTI_FILE, appId);
             }
             case VUE_PROJECT -> {
-                Flux<String> result = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
-                //todo 先使用多文件模式占位，后续修改
-                yield processCodeStream(result, CodeGenTypeEnum.MULTI_FILE, appId);
+                TokenStream result = aiCodeGeneratorService.generateVueProjectCodeStream(appId, userMessage);
+                yield processTokenStream(result, appId);
             }
             default -> {
                 String errorMessage = "不支持的生成类型：" + codeGenTypeEnum.getValue();
@@ -91,6 +96,45 @@ public class AiCodeGeneratorFacade {
             }
         };
     }
+
+    /**
+     * 将 TokenStream 转换为 Flux<String>，并传递工具调用信息
+     *
+     * @param tokenStream TokenStream 对象
+     * @return Flux<String> 流式响应
+     */
+    private Flux<String> processTokenStream(TokenStream tokenStream, Long appId) {
+        return Flux.create(sink -> {
+            tokenStream.onPartialResponse((String partialResponse) -> {
+                        // AI流式响应片段封装到响应类
+                        AiResponseMessage aiResponseMessage = new AiResponseMessage(partialResponse);
+                        // 往流中写入JSON格式的响应数据
+                        sink.next(JSONUtil.toJsonStr(aiResponseMessage));
+                    })
+                    .beforeToolExecution((beforeToolExecution ) ->{
+                        //调用工具之前获取工具的信息，用于前端展示
+                        ToolRequestMessage toolRequestMessage = new ToolRequestMessage(beforeToolExecution.request());
+                        sink.next(JSONUtil.toJsonStr(toolRequestMessage));
+                    })
+                    .onToolExecuted((toolExecution) -> {
+                        //工具调用完成后的事件
+                        ToolExecutedMessage toolExecutedMessage = new ToolExecutedMessage(toolExecution);
+                        sink.next(JSONUtil.toJsonStr(toolExecutedMessage));
+                    })
+                    .onCompleteResponse((ChatResponse response) -> {
+                        //代码生成完毕之后的事件
+                        log.info("VUE_PROJECT 生成完毕，文件已由工具写入 tmp/code_output/vue_project_{}", appId);
+                        sink.complete();
+                    })
+                    .onError((Throwable error) -> {
+                        error.printStackTrace();
+                        sink.error(error);
+                    })
+                    .start();
+        });
+    }
+
+
 
     /**
      * 通用代码流式处理方法

@@ -105,7 +105,8 @@ public class AppController {
         // 暂时设置应用名称为初始化提示词的前12个字符
         app.setAppName(appAddRequest.getInitPrompt().substring(0, Math.min(appAddRequest.getInitPrompt().length(), 12)));
         // 暂时设置代码生成类型为多文件
-        app.setCodeGenType(CodeGenTypeEnum.MULTI_FILE.getValue());
+        // 暂时设置为 VUE 工程生成
+        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
         app.setEditTime(LocalDateTime.now());
         // 参数校验
         appService.validApp(app, true);
