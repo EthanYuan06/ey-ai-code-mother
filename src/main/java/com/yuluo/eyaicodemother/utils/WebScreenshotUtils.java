@@ -26,6 +26,7 @@ public class WebScreenshotUtils {
 
     private static final WebDriver webDriver;
 
+    // todo 当前初始化WebDriver方案存在并发问题，需要优化
     static {
         final int DEFAULT_WIDTH = 1600;
         final int DEFAULT_HEIGHT = 900;
@@ -136,6 +137,8 @@ public class WebScreenshotUtils {
      */
     private static WebDriver initChromeDriver(int width, int height) {
         try {
+            // 设置国内镜像源，加速下载WebDriver
+            System.setProperty("wdm.chromeDriverMirrorUrl", "https://registry.npmmirror.com/binary.html?path=chromedriver");
             // 自动管理 ChromeDriver
             WebDriverManager.chromedriver().setup();
             // 配置 Chrome 选项

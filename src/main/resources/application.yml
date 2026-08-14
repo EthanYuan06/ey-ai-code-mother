@@ -55,3 +55,11 @@ langchain4j:
       model-name: deepseek-v4-flash
       log-requests: true
       log-responses: true
+# Tencent COS 对象存储服务
+cos:
+  client:
+    host: ${COS_HOST}
+    secretId: ${COS_SECRET_ID}
+    secretKey: ${COS_SECRET_KEY}
+    region: ${COS_REGION}
+    bucket: ${COS_BUCKET_NAME}

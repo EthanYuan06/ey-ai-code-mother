@@ -119,4 +119,14 @@ public class AiCodeGeneratorServiceFactory {
         // 兼容不需要 appId 的场景
         return getAiCodeGeneratorService(0L);
     }
+
+    /**
+     * 创建 AI 生成代码类型智能路由实例
+     */
+    @Bean
+    public AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService() {
+        return AiServices.builder(AiCodeGenTypeRoutingService.class)
+                .chatModel(chatModel)
+                .build();
+    }
 }

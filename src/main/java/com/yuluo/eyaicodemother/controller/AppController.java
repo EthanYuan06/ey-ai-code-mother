@@ -20,17 +20,20 @@ import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
 import com.yuluo.eyaicodemother.model.vo.AppVO;
 import com.yuluo.eyaicodemother.service.AppService;
+import com.yuluo.eyaicodemother.service.ProjectDownloadService;
 import com.yuluo.eyaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +50,10 @@ public class AppController {
 
     @Resource
     private AppService appService;
-
     @Resource
     private UserService userService;
+    @Resource
+    private ProjectDownloadService projectDownloadService;
 
     /**
      * 对话生成应用代码（流式 SSE）
@@ -99,20 +103,8 @@ public class AppController {
         ThrowUtils.throwIf(appAddRequest == null, ErrorCode.PARAMS_ERROR);
         // 获取当前登录用户
         User loginUser = userService.getLoginUser(request);
-        App app = new App();
-        BeanUtil.copyProperties(appAddRequest, app);
-        app.setUserId(loginUser.getId());
-        // 暂时设置应用名称为初始化提示词的前12个字符
-        app.setAppName(appAddRequest.getInitPrompt().substring(0, Math.min(appAddRequest.getInitPrompt().length(), 12)));
-        // 暂时设置代码生成类型为多文件
-        // 暂时设置为 VUE 工程生成
-        app.setCodeGenType(CodeGenTypeEnum.VUE_PROJECT.getValue());
-        app.setEditTime(LocalDateTime.now());
-        // 参数校验
-        appService.validApp(app, true);
-        boolean result = appService.save(app);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        return ResultUtils.success(app.getId());
+        Long appId = appService.createApp(appAddRequest, loginUser);
+        return ResultUtils.success(appId);
     }
 
     /**
@@ -135,6 +127,40 @@ public class AppController {
         return ResultUtils.success(deployUrl);
     }
 
+    /**
+     * 下载应用代码
+     *
+     * @param appId    应用ID
+     * @param request  请求
+     * @param response 响应
+     */
+    @GetMapping("/download/{appId}")
+    public void downloadAppCode(@PathVariable Long appId,
+                                HttpServletRequest request,
+                                HttpServletResponse response) {
+        // 基础校验
+        ThrowUtils.throwIf(appId == null || appId <= 0, ErrorCode.PARAMS_ERROR, "应用ID无效");
+        // 查询应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "应用不存在");
+        // 权限校验：只有应用创建者可以下载代码
+        User loginUser = userService.getLoginUser(request);
+        if (!app.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限下载该应用代码");
+        }
+        // 构建应用代码目录路径（生成目录，非部署目录）
+        String codeGenType = app.getCodeGenType();
+        String sourceDirName = codeGenType + "_" + appId;
+        String sourceDirPath = AppConstant.CODE_OUTPUT_ROOT_DIR + File.separator + sourceDirName;
+        // 检查代码目录是否存在
+        File sourceDir = new File(sourceDirPath);
+        ThrowUtils.throwIf(!sourceDir.exists() || !sourceDir.isDirectory(),
+                ErrorCode.NOT_FOUND_ERROR, "应用代码不存在，请先生成代码");
+        // 生成下载文件名（不添加中文内容）
+        String downloadFileName = String.valueOf(appId);
+        // 调用下载服务
+        projectDownloadService.downloadProjectAsZip(sourceDirPath, downloadFileName, response);
+    }
 
     /**
      * 更新应用（用户只能更新自己的应用）
