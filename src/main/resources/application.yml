@@ -63,3 +63,10 @@ cos:
     secretKey: ${COS_SECRET_KEY}
     region: ${COS_REGION}
     bucket: ${COS_BUCKET_NAME}
+# Pexels 图片搜索配置
+pexels:
+  api-key: ${PEXELS_API_KEY}
+# 阿里云 DashScope 配置
+dashscope:
+  api-key: ${DASHSCOPE_API_KEY}
+  image-model: wan2.2-t2i-flash
