@@ -1,6 +1,7 @@
 package com.yuluo.eyaicodemother.langgraph4j.state;
 
 import com.yuluo.eyaicodemother.langgraph4j.model.ImageResource;
+import com.yuluo.eyaicodemother.langgraph4j.model.QualityResult;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -74,6 +75,11 @@ public class WorkflowContext implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 质量检查结果
+     */
+    private QualityResult qualityResult;
 
     // ========== 上下文操作方法 ==========
 
