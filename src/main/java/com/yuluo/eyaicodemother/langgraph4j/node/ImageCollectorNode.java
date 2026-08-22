@@ -33,6 +33,8 @@ public class ImageCollectorNode {
             WorkflowContext context = WorkflowContext.getContext(state);
             String originalPrompt = context.getOriginalPrompt();
             List<ImageResource> collectedImages = new ArrayList<>();
+            StopWatch stopWatch = new StopWatch();
+            stopWatch.start();
             try {
                 // 第一步：获取图片收集计划
                 ImageCollectionPlanService planService = SpringContextUtil.getBean(ImageCollectionPlanService.class);
@@ -77,6 +79,8 @@ public class ImageCollectorNode {
                         collectedImages.addAll(images);
                     }
                 }
+                stopWatch.stop();
+                log.info("并发图片收集完成，共收集到 {} 张图片，耗时: {}", collectedImages.size(), stopWatch.getTotalTimeMillis());
                 log.info("并发图片收集完成，共收集到 {} 张图片", collectedImages.size());
             } catch (Exception e) {
                 log.error("图片收集失败: {}", e.getMessage(), e);

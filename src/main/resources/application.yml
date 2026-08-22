@@ -1,6 +1,12 @@
 spring:
   application:
     name: ey-ai-code-mother
+  # 禁用 DevTools 热部署，避免类加载器冲突导致 ClassCastException
+  devtools:
+    restart:
+      enabled: false
+    livereload:
+      enabled: false
   session:
     store-type: redis
     # session 30 天过期

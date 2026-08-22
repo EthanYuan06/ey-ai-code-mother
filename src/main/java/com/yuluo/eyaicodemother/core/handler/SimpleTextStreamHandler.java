@@ -1,5 +1,6 @@
 package com.yuluo.eyaicodemother.core.handler;
 
+import cn.hutool.core.util.StrUtil;
 import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.enums.ChatHistoryMessageTypeEnum;
 import com.yuluo.eyaicodemother.service.ChatHistoryService;
@@ -36,7 +37,9 @@ public class SimpleTextStreamHandler {
                 .doOnComplete(() -> {
                     // 流式响应完成后，添加AI消息到对话历史
                     String aiResponse = aiResponseBuilder.toString();
-                    chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+                    if (StrUtil.isNotBlank(aiResponse)) {
+                        chatHistoryService.addChatMessage(appId, aiResponse, ChatHistoryMessageTypeEnum.AI.getValue(), loginUser.getId());
+                    }
                 })
                 .doOnError(error -> {
                     // 如果AI回复失败，也要记录错误消息

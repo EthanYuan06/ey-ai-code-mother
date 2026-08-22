@@ -59,8 +59,15 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
             chatMemory.clear();
             for (ChatHistory history : historyList){
                 if (ChatHistoryMessageTypeEnum.USER.getValue().equals(history.getMessageType())){
+                    if (StrUtil.isBlank(history.getMessage())) {
+                        continue;
+                    }
                     chatMemory.add(UserMessage.from(history.getMessage()));
                 } else if (ChatHistoryMessageTypeEnum.AI.getValue().equals(history.getMessageType())) {
+                    // 跳过内容为空的 AI 消息，避免 API 报错：content or tool_calls must be set
+                    if (StrUtil.isBlank(history.getMessage())) {
+                        continue;
+                    }
                     chatMemory.add(AiMessage.from(history.getMessage()));
                 }
                 loadedCount++;
