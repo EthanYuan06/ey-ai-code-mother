@@ -346,7 +346,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         Long userId = appQueryRequest.getUserId();
         String sortField = appQueryRequest.getSortField();
         String sortOrder = appQueryRequest.getSortOrder();
-        return QueryWrapper.create()
+        QueryWrapper queryWrapper = QueryWrapper.create()
                 .eq("id", id)
                 .eq("codeGenType", codeGenType)
                 .eq("deployKey", deployKey)
@@ -354,8 +354,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 .eq("userId", userId)
                 .like("appName", appName)
                 .like("cover", cover)
-                .like("initPrompt", initPrompt)
-                .orderBy(sortField, "ascend".equals(sortOrder));
+                .like("initPrompt", initPrompt);
+        // 排序：有指定字段按指定字段排序，否则默认按创建时间降序
+        if (StrUtil.isNotBlank(sortField)) {
+            queryWrapper.orderBy(sortField, "ascend".equals(sortOrder));
+        } else {
+            queryWrapper.orderBy("createTime", false);
+        }
+        return queryWrapper;
     }
 
     @Override
