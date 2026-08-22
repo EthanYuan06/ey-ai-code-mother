@@ -3,6 +3,7 @@ package com.yuluo.eyaicodemother.controller;
 import com.yuluo.eyaicodemother.langgraph4j.CodeGenWorkflow;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,9 @@ import reactor.core.publisher.Flux;
 @Tag(name = "工作流接口")
 public class WorkflowSseController {
 
+    @Resource
+    private CodeGenWorkflow codeGenWorkflow;
+
     /**
      * Flux 流式执行工作流
      */
@@ -25,6 +29,7 @@ public class WorkflowSseController {
     @GetMapping(value = "/execute-flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> executeWorkflowWithFlux(@RequestParam String prompt) {
         log.info("收到 Flux 工作流执行请求: {}", prompt);
-        return new CodeGenWorkflow().executeWorkflowWithFlux(prompt);
+        // 测试接口使用默认值（appId=0, userId=0）
+        return codeGenWorkflow.executeWorkflowWithFlux(prompt, 0L, 0L);
     }
 }

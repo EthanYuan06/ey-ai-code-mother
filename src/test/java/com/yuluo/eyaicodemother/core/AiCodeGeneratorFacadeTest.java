@@ -36,7 +36,7 @@ class AiCodeGeneratorFacadeTest {
         File file =
                 aiCodeGeneratorFacade
                         .generateAndSaveCode(
-                                "做个EthanYuan的工作记录小工具，代码不超过150行",
+                                "做一个个人简历网站，科技风，Java后端工程师",
                                 CodeGenTypeEnum.HTML,
                                 1L
                         );

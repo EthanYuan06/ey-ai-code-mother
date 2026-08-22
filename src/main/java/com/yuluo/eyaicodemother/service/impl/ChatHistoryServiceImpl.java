@@ -132,6 +132,16 @@ public class ChatHistoryServiceImpl extends ServiceImpl<ChatHistoryMapper, ChatH
     }
 
     @Override
+    public int countByAppId(Long appId) {
+        if (appId == null || appId <= 0) {
+            return 0;
+        }
+        QueryWrapper queryWrapper = QueryWrapper.create()
+                .eq("appId", appId);
+        return (int) this.count(queryWrapper);
+    }
+
+    @Override
     public QueryWrapper getQueryWrapper(ChatHistoryQueryRequest chatHistoryQueryRequest){
         QueryWrapper queryWrapper = QueryWrapper.create();
         if (chatHistoryQueryRequest == null){

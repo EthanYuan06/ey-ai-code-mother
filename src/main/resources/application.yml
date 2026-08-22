@@ -76,3 +76,8 @@ pexels:
 dashscope:
   api-key: ${DASHSCOPE_API_KEY}
   image-model: wan2.2-t2i-flash
+# 应用配置
+app:
+  code-gen:
+    # 工作流模式开关：true=使用工作流生成代码（默认），false=使用原模式生成代码
+    workflow-enabled: true

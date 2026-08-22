@@ -26,6 +26,17 @@ public class CodeQualityCheckNode {
         return node_async(state -> {
             WorkflowContext context = WorkflowContext.getContext(state);
             log.info("执行节点: 代码质量检查");
+
+            // 多轮对话时，跳过质量检查（信任用户的修改意图）
+            if (context.isMultiTurn()) {
+                log.info("多轮对话，跳过代码质量检查");
+                context.setCurrentStep("代码质量检查（跳过）");
+                context.setQualityResult(QualityResult.builder()
+                        .isValid(true)
+                        .build());
+                return WorkflowContext.saveContext(context);
+            }
+
             String generatedCodeDir = context.getGeneratedCodeDir();
             QualityResult qualityResult;
             try {

@@ -34,6 +34,21 @@ public class WorkflowContext implements Serializable {
     private String currentStep;
 
     /**
+     * 应用 ID（关联业务应用）
+     */
+    private Long appId;
+
+    /**
+     * 用户 ID（用于记录对话历史）
+     */
+    private Long userId;
+
+    /**
+     * 是否为多轮对话（非首次请求）
+     */
+    private boolean isMultiTurn;
+
+    /**
      * 用户原始输入的提示词
      */
     private String originalPrompt;
@@ -62,6 +77,21 @@ public class WorkflowContext implements Serializable {
      * 生成的代码目录
      */
     private String generatedCodeDir;
+
+    /**
+     * 生成的完整代码内容（用于透传给前端）
+     */
+    private String codeContent;
+
+    /**
+     * 质检重试次数
+     */
+    private int retryCount;
+
+    /**
+     * 最大重试次数
+     */
+    public static final int MAX_RETRY_COUNT = 2;
 
     /**
      * 构建成功的目录

@@ -6,6 +6,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.yuluo.eyaicodemother.ai.AiCodeGenTypeRoutingService;
@@ -16,6 +17,7 @@ import com.yuluo.eyaicodemother.core.handler.StreamHandlerExecutor;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
 import com.yuluo.eyaicodemother.exception.ThrowUtils;
+import com.yuluo.eyaicodemother.langgraph4j.CodeGenWorkflow;
 import com.yuluo.eyaicodemother.mapper.AppMapper;
 import com.yuluo.eyaicodemother.model.dto.app.AppAddRequest;
 import com.yuluo.eyaicodemother.model.dto.app.AppQueryRequest;
@@ -31,6 +33,7 @@ import com.yuluo.eyaicodemother.service.ScreenshotService;
 import com.yuluo.eyaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -66,6 +69,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     private ScreenshotService screenshotService;
     @Resource
     private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+    @Resource
+    private CodeGenWorkflow codeGenWorkflow;
+
+    /**
+     * 工作流模式开关：true=使用工作流生成代码（默认），false=使用原模式生成代码
+     */
+    @Value("${app.code-gen.workflow-enabled:true}")
+    private boolean workflowEnabled;
 
     @Override
     public Long createApp(AppAddRequest appAddRequest, User loginUser) {
@@ -105,11 +116,100 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "未知的代码生成类型");
         // 通过校验后，将用户消息添加到对话历史
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-        // 调用 AI 生成代码
+        // 根据配置选择生成模式：工作流模式（主）或原模式（兆底）
+        if (workflowEnabled) {
+            log.info("使用工作流模式生成代码，appId: {}", appId);
+            return chatToGenCodeByWorkflow(appId, message, loginUser);
+        }
+        // 原模式：调用 AI 生成代码
+        log.info("使用原模式生成代码，appId: {}", appId);
         Flux<String> codeStream = aiCodeGeneratorFacade.generateAndSaveCodeStream(message, codeGenTypeEnum, appId);
         // 收集 AI 响应内容，并在完成后添加到对话历史（流处理执行器）
         // 因为响应数据有字符串也有JSON，使用流处理器分别处理
         return streamHandlerExecutor.doExecute(codeStream, chatHistoryService, appId, loginUser, codeGenTypeEnum);
+    }
+
+    /**
+     * 通过工作流生成代码（工作流模式）
+     * 整合图片收集、提示词增强、智能路由、代码生成、质量检查等能力
+     *
+     * @param appId    应用 ID
+     * @param message  用户消息
+     * @param loginUser 登录用户
+     * @return 流式响应
+     */
+    private Flux<String> chatToGenCodeByWorkflow(Long appId, String message, User loginUser) {
+        // 调用工作流执行代码生成
+        Flux<String> workflowFlux = codeGenWorkflow.executeWorkflowWithFlux(message, appId, loginUser.getId());
+        // 收集 AI 响应内容（用于记录对话历史）
+        StringBuilder aiResponseBuilder = new StringBuilder();
+        // 将工作流的流式输出适配为前端统一的 SSE 格式
+        return workflowFlux
+                .<String>handle((sseEvent, sink) -> {
+                    // 解析工作流 SSE 事件，提取内容并转换为统一格式
+                    String content = extractEventContent(sseEvent);
+                    if (content != null && !content.isEmpty()) {
+                        aiResponseBuilder.append(content);
+                        sink.next(JSONUtil.toJsonStr(Map.of("d", content)));
+                    }
+                })
+                .doOnComplete(() -> {
+                    // 工作流完成后，记录 AI 响应到对话历史
+                    String aiResponse = aiResponseBuilder.toString();
+                    if (!aiResponse.isEmpty()) {
+                        try {
+                            chatHistoryService.addChatMessage(
+                                    appId,
+                                    aiResponse,
+                                    ChatHistoryMessageTypeEnum.AI.getValue(),
+                                    loginUser.getId()
+                            );
+                            log.info("工作流模式：AI 响应已记录到对话历史，appId: {}", appId);
+                        } catch (Exception e) {
+                            log.error("记录 AI 响应到对话历史失败: {}", e.getMessage());
+                        }
+                    }
+                });
+    }
+
+    /**
+     * 从工作流 SSE 事件中提取内容
+     * 支持两种格式：
+     * 1. 工作流步骤事件: event: xxx\ndata: {json}\n\n
+     * 2. 代码内容事件: {"d": "code content"}（已由工作流直接发射）
+     */
+    private String extractEventContent(String sseEvent) {
+        // 工作流 SSE 格式: event: xxx\ndata: {json}\n\n
+        if (sseEvent == null || sseEvent.isEmpty()) {
+            return null;
+        }
+        try {
+            // 先检查是否已经是前端格式的代码内容事件（{"d": "..."}）
+            if (sseEvent.trim().startsWith("{")) {
+                cn.hutool.json.JSONObject jsonObj = JSONUtil.parseObj(sseEvent);
+                if (jsonObj.containsKey("d")) {
+                    return jsonObj.getStr("d");
+                }
+            }
+            // 解析工作流步骤事件
+            String[] lines = sseEvent.split("\n");
+            for (String line : lines) {
+                if (line.startsWith("data: ")) {
+                    String jsonStr = line.substring(6);
+                    cn.hutool.json.JSONObject jsonObj = JSONUtil.parseObj(jsonStr);
+                    // 根据不同事件类型提取内容
+                    if (jsonObj.containsKey("message")) {
+                        return jsonObj.getStr("message");
+                    }
+                    if (jsonObj.containsKey("currentStep")) {
+                        return "[" + jsonObj.getStr("currentStep") + "] 完成";
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("解析工作流 SSE 事件失败: {}", e.getMessage());
+        }
+        return null;
     }
 
     @Override

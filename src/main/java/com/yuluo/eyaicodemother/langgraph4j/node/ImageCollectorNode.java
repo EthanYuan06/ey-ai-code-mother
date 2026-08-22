@@ -31,6 +31,14 @@ public class ImageCollectorNode {
     public static AsyncNodeAction<MessagesState<String>> create() {
         return node_async(state -> {
             WorkflowContext context = WorkflowContext.getContext(state);
+            
+            // 多轮对话时，跳过图片收集（使用首次收集的图片）
+            if (context.isMultiTurn()) {
+                log.info("多轮对话，跳过图片收集，使用历史图片资源");
+                context.setCurrentStep("图片收集（跳过）");
+                return WorkflowContext.saveContext(context);
+            }
+            
             String originalPrompt = context.getOriginalPrompt();
             List<ImageResource> collectedImages = new ArrayList<>();
             StopWatch stopWatch = new StopWatch();

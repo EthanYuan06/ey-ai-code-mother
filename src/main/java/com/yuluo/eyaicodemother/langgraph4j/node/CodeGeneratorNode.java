@@ -12,6 +12,8 @@ import org.bsc.langgraph4j.prebuilt.MessagesState;
 import reactor.core.publisher.Flux;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
@@ -31,13 +33,18 @@ public class CodeGeneratorNode {
             CodeGenTypeEnum generationType = context.getGenerationType();
             // 获取 AI 代码生成外观服务
             AiCodeGeneratorFacade codeGeneratorFacade = SpringContextUtil.getBean(AiCodeGeneratorFacade.class);
-            log.info("开始生成代码，类型: {} ({})", generationType.getValue(), generationType.getText());
-            // 先使用固定的 appId (后续再整合到业务中)
-            Long appId = 0L;
+            Long appId = context.getAppId();
+            log.info("开始生成代码，类型: {} ({})，appId: {}", generationType.getValue(), generationType.getText(), appId);
             // 调用流式代码生成
             Flux<String> codeStream = codeGeneratorFacade.generateAndSaveCodeStream(userMessage, generationType, appId);
-            // 同步等待流式输出完成
-            codeStream.blockLast(Duration.ofMinutes(10)); // 最多等待 10 分钟
+            // 收集代码流内容（用于透传给前端）
+            List<String> codeChunks = new ArrayList<>();
+            // 同步等待流式输出完成，同时收集内容
+            codeStream.doOnNext(codeChunks::add).blockLast(Duration.ofMinutes(10));
+            // 将收集的代码内容存入 context
+            String completeCode = String.join("", codeChunks);
+            context.setCodeContent(completeCode);
+            log.info("AI 代码生成完成，代码长度: {} 字符", completeCode.length());
             // 根据类型设置生成目录
             String generatedCodeDir = String.format("%s/%s_%s", AppConstant.CODE_OUTPUT_ROOT_DIR, generationType.getValue(), appId);
             log.info("AI 代码生成完成，生成目录: {}", generatedCodeDir);
