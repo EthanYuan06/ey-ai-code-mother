@@ -7,12 +7,9 @@ import com.yuluo.eyaicodemother.langgraph4j.model.QualityResult;
 import com.yuluo.eyaicodemother.langgraph4j.node.*;
 import com.yuluo.eyaicodemother.langgraph4j.state.WorkflowContext;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
-import com.yuluo.eyaicodemother.model.entity.App;
-import com.yuluo.eyaicodemother.service.AppService;
 import com.yuluo.eyaicodemother.service.ChatHistoryService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.GraphRepresentation;
 import org.bsc.langgraph4j.GraphStateException;
@@ -38,9 +35,6 @@ public class CodeGenWorkflow {
 
     @Resource
     private ChatHistoryService chatHistoryService;
-    @Resource
-    @Lazy
-    private AppService appService;
 
     /**
      * 创建完整的工作流
@@ -85,21 +79,18 @@ public class CodeGenWorkflow {
      * @param originalPrompt 用户原始提示词
      * @param appId          应用 ID
      * @param userId         用户 ID
+     * @param codeGenType    代码生成类型（由调用方传入，避免工作流内部重复查库）
      * @return SSE 流式响应
      */
-    public Flux<String> executeWorkflowWithFlux(String originalPrompt, Long appId, Long userId) {
+    public Flux<String> executeWorkflowWithFlux(String originalPrompt, Long appId, Long userId, CodeGenTypeEnum codeGenType) {
         return Flux.create(sink -> {
             Thread.startVirtualThread(() -> {
                 try {
                     // 加载对话历史，判断是否为多轮对话
                     int historyCount = chatHistoryService.countByAppId(appId);
-                    boolean isMultiTurn = historyCount > 0;
+                    boolean isMultiTurn = historyCount > 1;
                     log.info("appId: {}, 对话历史数量：{}, 是否多轮对话：{}", appId, historyCount, isMultiTurn);
-                                    
-                    // 查询代码生成类型（仅查一次，存入 context 供后续节点使用）
-                    CodeGenTypeEnum codeGenType = loadCodeGenType(appId);
-                    log.info("appId: {}, 代码生成类型：{}", appId, codeGenType);
-                                    
+
                     CompiledGraph<MessagesState<String>> workflow = createWorkflow();
                     WorkflowContext initialContext = WorkflowContext.builder()
                             .originalPrompt(originalPrompt)
@@ -237,19 +228,5 @@ public class CodeGenWorkflow {
         return routeBuildOrSkip(state);
     }
 
-    /**
-     * 从数据库加载代码生成类型（仅查一次）
-     */
-    private CodeGenTypeEnum loadCodeGenType(Long appId) {
-        try {
-            App app = appService.getById(appId);
-            if (app != null && app.getCodeGenType() != null) {
-                return CodeGenTypeEnum.getEnumByValue(app.getCodeGenType());
-            }
-        } catch (Exception e) {
-            log.error("加载代码生成类型失败，appId: {}", appId, e);
-        }
-        return null;
-    }
 
 }

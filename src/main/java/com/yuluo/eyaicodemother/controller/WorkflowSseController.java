@@ -29,7 +29,7 @@ public class WorkflowSseController {
     @GetMapping(value = "/execute-flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> executeWorkflowWithFlux(@RequestParam String prompt) {
         log.info("收到 Flux 工作流执行请求: {}", prompt);
-        // 测试接口使用默认值（appId=0, userId=0）
-        return codeGenWorkflow.executeWorkflowWithFlux(prompt, 0L, 0L);
+        // 测试接口使用默认值（appId=0, userId=0），codeGenType 由 RouterNode 决定
+        return codeGenWorkflow.executeWorkflowWithFlux(prompt, 0L, 0L, null);
     }
 }

@@ -31,7 +31,7 @@ public class CodeGeneratorNode {
             // 构造用户消息，包含原始提示词和可能的修复信息
             String userMessage = buildUserMessage(context);
             CodeGenTypeEnum generationType = context.getGenerationType();
-            // 获取 AI 代码生成外观服务
+            // 获取AI生成代码门面类
             AiCodeGeneratorFacade codeGeneratorFacade = SpringContextUtil.getBean(AiCodeGeneratorFacade.class);
             Long appId = context.getAppId();
             log.info("开始生成代码，类型: {} ({})，appId: {}", generationType.getValue(), generationType.getText(), appId);

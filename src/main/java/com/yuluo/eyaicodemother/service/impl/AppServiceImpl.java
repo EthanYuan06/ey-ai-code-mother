@@ -116,10 +116,10 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "未知的代码生成类型");
         // 通过校验后，将用户消息添加到对话历史
         chatHistoryService.addChatMessage(appId, message, ChatHistoryMessageTypeEnum.USER.getValue(), loginUser.getId());
-        // 根据配置选择生成模式：工作流模式（主）或原模式（兆底）
+        // 根据配置选择生成模式：工作流模式或原模式
         if (workflowEnabled) {
             log.info("使用工作流模式生成代码，appId: {}", appId);
-            return chatToGenCodeByWorkflow(appId, message, loginUser);
+            return chatToGenCodeByWorkflow(appId, message, loginUser, codeGenTypeEnum);
         }
         // 原模式：调用 AI 生成代码
         log.info("使用原模式生成代码，appId: {}", appId);
@@ -133,14 +133,15 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
      * 通过工作流生成代码（工作流模式）
      * 整合图片收集、提示词增强、智能路由、代码生成、质量检查等能力
      *
-     * @param appId    应用 ID
-     * @param message  用户消息
-     * @param loginUser 登录用户
+     * @param appId         应用 ID
+     * @param message       用户消息
+     * @param loginUser     登录用户
+     * @param codeGenType   代码生成类型（复用 chatToGenCode 中已查询的结果）
      * @return 流式响应
      */
-    private Flux<String> chatToGenCodeByWorkflow(Long appId, String message, User loginUser) {
-        // 调用工作流执行代码生成
-        Flux<String> workflowFlux = codeGenWorkflow.executeWorkflowWithFlux(message, appId, loginUser.getId());
+    private Flux<String> chatToGenCodeByWorkflow(Long appId, String message, User loginUser, CodeGenTypeEnum codeGenType) {
+        // 调用工作流执行代码生成，传入已查询的 codeGenType 避免重复查库
+        Flux<String> workflowFlux = codeGenWorkflow.executeWorkflowWithFlux(message, appId, loginUser.getId(), codeGenType);
         // 收集 AI 响应内容（用于记录对话历史）
         StringBuilder aiResponseBuilder = new StringBuilder();
         // 将工作流的流式输出适配为前端统一的 SSE 格式
