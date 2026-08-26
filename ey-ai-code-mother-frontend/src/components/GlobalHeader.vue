@@ -5,7 +5,7 @@
       <a-col flex="280px">
         <RouterLink to="/">
           <div class="header-left">
-            <img class="logo" src="@/assets/logo.png" alt="Logo" />
+            <img class="logo" src="@/assets/logo.jpg" alt="Logo" />
             <h1 class="site-title">Code Zero Studio</h1>
           </div>
         </RouterLink>

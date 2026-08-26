@@ -10,6 +10,7 @@ import cn.hutool.json.JSONUtil;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.yuluo.eyaicodemother.ai.AiCodeGenTypeRoutingService;
+import com.yuluo.eyaicodemother.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.yuluo.eyaicodemother.constant.AppConstant;
 import com.yuluo.eyaicodemother.core.AiCodeGeneratorFacade;
 import com.yuluo.eyaicodemother.core.bulider.VueProjectBuilder;
@@ -68,7 +69,7 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Resource
     private ScreenshotService screenshotService;
     @Resource
-    private AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService;
+    private AiCodeGenTypeRoutingServiceFactory aiCodeGenTypeRoutingServiceFactory;
     @Resource
     private CodeGenWorkflow codeGenWorkflow;
 
@@ -89,7 +90,8 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         app.setUserId(loginUser.getId());
         // 暂时设置应用名称为初始化提示词的前12个字符
         app.setAppName(appAddRequest.getInitPrompt().substring(0, Math.min(appAddRequest.getInitPrompt().length(), 12)));
-        // 使用AI代码生成类型智能路由
+        // 使用AI代码生成类型智能路由（多例模式）
+        AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService = aiCodeGenTypeRoutingServiceFactory.createAiCodeGenTypeRoutingService();
         CodeGenTypeEnum selectedCodeGenType = aiCodeGenTypeRoutingService.routeCodeGenType(initPrompt);
         app.setCodeGenType(selectedCodeGenType.getValue());
         // 参数校验

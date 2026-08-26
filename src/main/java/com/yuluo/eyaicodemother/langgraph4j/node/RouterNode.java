@@ -1,6 +1,7 @@
 package com.yuluo.eyaicodemother.langgraph4j.node;
 
 import com.yuluo.eyaicodemother.ai.AiCodeGenTypeRoutingService;
+import com.yuluo.eyaicodemother.ai.AiCodeGenTypeRoutingServiceFactory;
 import com.yuluo.eyaicodemother.langgraph4j.state.WorkflowContext;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
 import com.yuluo.eyaicodemother.utils.SpringContextUtil;
@@ -25,11 +26,11 @@ public class RouterNode {
             // 多轮对话时，直接使用 context 中的代码生成类型（无需查库）
             if (context.isMultiTurn() && context.getGenerationType() != null) {
                 generationType = context.getGenerationType();
-                log.info("多轮对话，使用 context 中的类型：{} ({})", generationType.getValue(), generationType.getText());
             } else {
                 try {
                     // 获取AI路由服务
-                    AiCodeGenTypeRoutingService routingService = SpringContextUtil.getBean(AiCodeGenTypeRoutingService.class);
+                    AiCodeGenTypeRoutingServiceFactory factory  = SpringContextUtil.getBean(AiCodeGenTypeRoutingServiceFactory.class);
+                    AiCodeGenTypeRoutingService routingService = factory.createAiCodeGenTypeRoutingService();
                     // 根据原始提示词进行智能路由
                     generationType = routingService.routeCodeGenType(context.getOriginalPrompt());
                     log.info("AI智能路由完成，选择类型: {} ({})", generationType.getValue(), generationType.getText());

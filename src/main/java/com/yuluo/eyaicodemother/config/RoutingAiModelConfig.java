@@ -1,20 +1,17 @@
 package com.yuluo.eyaicodemother.config;
 
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
-/**
- * 推理模型配置
- */
 @Configuration
-@ConfigurationProperties(prefix = "langchain4j.open-ai.reasoning-streaming-chat-model")
+@ConfigurationProperties(prefix = "langchain4j.open-ai.routing-chat-model")
 @Data
-public class ReasoningStreamingChatModelConfig {
+public class RoutingAiModelConfig {
 
     private String baseUrl;
 
@@ -22,26 +19,22 @@ public class ReasoningStreamingChatModelConfig {
 
     private String modelName;
 
-    private int maxTokens;
-
     private Boolean logRequests;
 
     private Boolean logResponses;
 
     /**
-     * 推理流式模型（用于 Vue 项目生成，带工具调用）
+     * 创建用于路由判断的 ChatModel
      */
     @Bean
     @Scope("prototype")
-    public StreamingChatModel reasoningStreamingChatModelPrototype() {
-        return OpenAiStreamingChatModel.builder()
+    public ChatModel routingChatModelPrototype() {
+        return OpenAiChatModel.builder()
                 .apiKey(apiKey)
-                .baseUrl(baseUrl)
                 .modelName(modelName)
-                .maxTokens(maxTokens)
+                .baseUrl(baseUrl)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
-                .returnThinking(true)  // 框架自动处理思维链内容，避免工具调用拿不到思考内容而报错
                 .build();
     }
 }

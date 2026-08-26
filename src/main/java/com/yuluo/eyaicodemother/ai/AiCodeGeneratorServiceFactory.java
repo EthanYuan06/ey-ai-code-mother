@@ -8,6 +8,7 @@ import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
 import com.yuluo.eyaicodemother.model.enums.CodeGenTypeEnum;
 import com.yuluo.eyaicodemother.service.ChatHistoryService;
+import com.yuluo.eyaicodemother.utils.SpringContextUtil;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -25,19 +26,6 @@ import java.time.Duration;
 @Slf4j
 public class AiCodeGeneratorServiceFactory {
 
-    @Resource
-    private ChatModel chatModel;
-    @Resource
-    private StreamingChatModel openAiStreamingChatModel;
-    @Resource
-    private StreamingChatModel reasoningStreamingChatModel;
-    @Resource
-    private RedisChatMemoryStore redisChatMemoryStore;
-    @Resource
-    private ChatHistoryService chatHistoryService;
-    @Resource
-    private ToolManager toolManager;
-
     /**
      * AI 服务实例缓存
      * 缓存策略：
@@ -53,6 +41,14 @@ public class AiCodeGeneratorServiceFactory {
                 log.debug("AI 服务实例被移除，缓存键: {}, 原因: {}", key, cause);
             })
             .build();
+    @Resource(name = "openAiChatModel")
+    private ChatModel chatModel;
+    @Resource
+    private RedisChatMemoryStore redisChatMemoryStore;
+    @Resource
+    private ChatHistoryService chatHistoryService;
+    @Resource
+    private ToolManager toolManager;
 
     /**
      * 根据 appId 获取服务（带本地缓存）
@@ -92,25 +88,33 @@ public class AiCodeGeneratorServiceFactory {
         // 从数据库加载历史对话到记忆中
         chatHistoryService.loadChatHistoryToMemory(appId, chatMemory, 20);
         // 根据不同的代码生成类型选择不同的模型配置
-        return switch (codeGenType){
-            case HTML, MULTI_FILE -> AiServices.builder(AiCodeGeneratorService.class)
-                    .chatModel(chatModel)
-                    .streamingChatModel(openAiStreamingChatModel)
-                    .chatMemory(chatMemory)
-                    .build();
-            case VUE_PROJECT -> AiServices.builder(AiCodeGeneratorService.class)
-                    .streamingChatModel(reasoningStreamingChatModel)
-                    .chatMemoryProvider(memoryId -> chatMemory)
-                    .tools(toolManager.getAllTools())
-                    // 如果生成了幻觉工具名，框架会拦截并告知LLM不存在该工具，让LLM再请求工具调用
-                    .hallucinatedToolNameStrategy(toolExecutionRequest ->
-                            ToolExecutionResultMessage.from(
-                            toolExecutionRequest,
-                                    "Error: there is no tool calling " + toolExecutionRequest.name()
-                    ))
-                    .build();
+        return switch (codeGenType) {
+            case HTML, MULTI_FILE -> {
+                // 使用多例模式的 StreamingChatModel 解决并发问题
+                StreamingChatModel openAiStreamingChatModel = SpringContextUtil.getBean("streamingChatModelPrototype", StreamingChatModel.class);
+                yield AiServices.builder(AiCodeGeneratorService.class)
+                        .chatModel(chatModel)
+                        .streamingChatModel(openAiStreamingChatModel)
+                        .chatMemory(chatMemory)
+                        .build();
+            }
+            case VUE_PROJECT -> {
+                // 使用多例模式的 StreamingChatModel 解决并发问题
+                StreamingChatModel reasoningStreamingChatModel = SpringContextUtil.getBean("reasoningStreamingChatModelPrototype", StreamingChatModel.class);
+                yield AiServices.builder(AiCodeGeneratorService.class)
+                        .streamingChatModel(reasoningStreamingChatModel)
+                        .chatMemoryProvider(memoryId -> chatMemory)
+                        .tools(toolManager.getAllTools())
+                        // 如果生成了幻觉工具名，框架会拦截并告知LLM不存在该工具，让LLM再请求工具调用
+                        .hallucinatedToolNameStrategy(toolExecutionRequest ->
+                                ToolExecutionResultMessage.from(
+                                        toolExecutionRequest,
+                                        "Error: there is no tool calling " + toolExecutionRequest.name()
+                                ))
+                        .build();
+            }
             default ->
-                throw new BusinessException(ErrorCode.PARAMS_ERROR,"不支持的生成类型：" + codeGenType.getValue());
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的生成类型：" + codeGenType.getValue());
         };
     }
 
@@ -123,13 +127,4 @@ public class AiCodeGeneratorServiceFactory {
         return getAiCodeGeneratorService(0L);
     }
 
-    /**
-     * 创建 AI 生成代码类型智能路由实例
-     */
-    @Bean
-    public AiCodeGenTypeRoutingService aiCodeGenTypeRoutingService() {
-        return AiServices.builder(AiCodeGenTypeRoutingService.class)
-                .chatModel(chatModel)
-                .build();
-    }
 }

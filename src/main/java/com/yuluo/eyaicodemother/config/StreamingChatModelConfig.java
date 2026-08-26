@@ -9,12 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
 /**
- * 推理模型配置
+ * 常规流式模型配置
  */
 @Configuration
-@ConfigurationProperties(prefix = "langchain4j.open-ai.reasoning-streaming-chat-model")
+@ConfigurationProperties(prefix = "langchain4j.open-ai.streaming-chat-model")
 @Data
-public class ReasoningStreamingChatModelConfig {
+public class StreamingChatModelConfig {
 
     private String baseUrl;
 
@@ -22,26 +22,22 @@ public class ReasoningStreamingChatModelConfig {
 
     private String modelName;
 
-    private int maxTokens;
-
     private Boolean logRequests;
 
     private Boolean logResponses;
 
     /**
-     * 推理流式模型（用于 Vue 项目生成，带工具调用）
+     * 常规流式模型
      */
     @Bean
     @Scope("prototype")
-    public StreamingChatModel reasoningStreamingChatModelPrototype() {
+    public StreamingChatModel streamingChatModelPrototype() {
         return OpenAiStreamingChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
                 .modelName(modelName)
-                .maxTokens(maxTokens)
                 .logRequests(logRequests)
                 .logResponses(logResponses)
-                .returnThinking(true)  // 框架自动处理思维链内容，避免工具调用拿不到思考内容而报错
                 .build();
     }
 }
