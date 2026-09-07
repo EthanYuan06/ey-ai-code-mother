@@ -1,10 +1,32 @@
 # Code Zero Studio
 
-> 基于自然语言描述的 AI 零代码应用生成平台。用户输入需求，AI Agent 自动完成素材收集、代码生成、质量检查及项目构建全流程，支持可视化编辑与一键部署。
+
 
 **GitHub**: [github.com/EthanYuan06/ey-ai-code-mother](https://github.com/EthanYuan06/ey-ai-code-mother)
 
 ---
+
+## 🔧技术栈
+
+### 后端
+
+| 类别      | 技术                                                         |
+| --------- | ------------------------------------------------------------ |
+| 语言/框架 | Java 21 + Spring Boot 3.5.3                                  |
+| AI 框架   | LangChain4j 1.3.0 + LangGraph4j 1.6.0                        |
+| 数据库    | MySQL + MyBatis-Flex 1.11.0                                  |
+| 缓存/会话 | Redis + Spring Session + Caffeine                            |
+| AI 模型   | DeepSeek（v4-flash / v4-pro）+ 阿里云 DashScope（qwen3.7-flash / wan2.2-t2i-flash） |
+| 外部服务  | 腾讯云 COS（对象存储）、Pexels（图片搜索）、Selenium（网页截图） |
+| API 文档  | Knife4j OpenAPI3                                             |
+| 工具库    | Hutool 5.8                                                   |
+
+### 前端
+
+| 类别 | 技术                              |
+| ---- | --------------------------------- |
+| 框架 | Vue 3 + Vite                      |
+| 部署 | Nginx + Docker Compose 多容器编排 |
 
 ## 核心亮点
 
@@ -18,20 +40,9 @@
 
 ---
 
-## 技术栈
+## 
 
-### 后端
-
-| 类别 | 技术 |
-|------|------|
-| 语言/框架 | Java 21 + Spring Boot 3.5.3 |
-| AI 框架 | LangChain4j 1.3.0 + LangGraph4j 1.6.0 |
-| 数据库 | MySQL + MyBatis-Flex 1.11.0 |
-| 缓存/会话 | Redis + Spring Session + Caffeine |
-| AI 模型 | DeepSeek（v4-flash / v4-pro）+ 阿里云 DashScope（qwen3.7-flash / wan2.2-t2i-flash） |
-| 外部服务 | 腾讯云 COS（对象存储）、Pexels（图片搜索）、Selenium（网页截图） |
-| API 文档 | Knife4j OpenAPI3 |
-| 工具库 | Hutool 5.8 |
+### 
 
 ### 前端
 
@@ -55,8 +66,8 @@ graph TB
     subgraph 后端
         B --> C[Spring Boot 3]
         C --> D[AiCodeGeneratorFacade<br/>门面编排层]
-        D -->|workflow-enabled=true| E[CodeGenWorkflow<br/>LangGraph4j 工作流]
-        D -->|workflow-enabled=false| F[原生成链路<br/>策略+模板模式]
+        D -->|workflow| E[CodeGenWorkflow<br/>LangGraph4j 工作流]
+   
     end
 
     subgraph AI 引擎
@@ -98,7 +109,7 @@ stateDiagram-v2
 | 流式输出 | 步骤事件 → SSE 转换 | Flux\<String\> 直接透传 |
 | 适用场景 | 多文件/复杂项目/Vue部署 | HTML快速生成/调试 |
 
-通过 `app.code-gen.workflow-enabled` 配置项一键切换，默认启用工作流模式。
+
 
 ### 关键设计
 
@@ -110,14 +121,14 @@ stateDiagram-v2
 
 ---
 
-## 快速启动
+## 🚀 快速启动
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/EthanYuan06/ey-ai-code-mother.git
 
 # 2. 配置环境变量
-cp .env.code_mother .env
+cp .env .env
 # 编辑 .env 填写 DeepSeek、DashScope、COS、Pexels 等 API Key
 
 # 3. Docker Compose 一键启动

@@ -1,3 +1,6 @@
+-- 强制客户端连接字符集为 utf8mb4，避免容器 locale 非 UTF-8 时按 latin1 导入导致中文双重编码乱码
+SET NAMES utf8mb4;
+
 -- 创建数据库并选中
 create database if not exists code_mother;
 use code_mother;
@@ -22,9 +25,13 @@ create table if not exists user
     INDEX idx_userName (userName)
 ) comment '用户' collate = utf8mb4_unicode_ci;
 
--- 初始化管理员账户（账号：subaru486，密码：subaru0427，盐值：EthanYuan）
-insert into user (userAccount, userPassword, userName, userRole)
-values ('subaru486', 'd9135218180b9451404b415e392942ef', '管理员', 'admin');
+-- 初始化管理员账户
+insert into user (userAccount, userPassword, userName,userAvatar, userRole)
+values ('subaru486',
+        'd9135218180b9451404b415e392942ef',
+        '安和昴',
+        'https://yuluo-picture-1383397986.cos.ap-guangzhou.myqcloud.com/zero-code-avatar/wechat_20260811130846_263_115.jpg',
+        'admin');
 
 -- 应用表
 create table app
