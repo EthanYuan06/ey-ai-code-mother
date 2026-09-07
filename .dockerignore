@@ -11,7 +11,7 @@ ey-ai-code-mother-frontend/node_modules/
 ey-ai-code-mother-frontend/dist/
 *.log
 *.md
-.env.code_mother
+.env
 .env.docker
 deploy.sh
 docker/

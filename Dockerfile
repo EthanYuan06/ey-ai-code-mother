@@ -1,11 +1,7 @@
 # ============================================
-# 阶段1: 构建 - 使用 JDK 21 + Maven 编译
+# 阶段1: 构建 - Maven + JDK21（官方镜像已预装，无需 apt）
 # ============================================
-FROM eclipse-temurin:21-jdk AS build
-
-RUN apt-get update && \
-    apt-get install -y maven --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /build
 COPY pom.xml .
@@ -16,24 +12,30 @@ COPY src ./src
 RUN mvn package -DskipTests -B
 
 # ============================================
-# 阶段2: 运行 - JRE 21 + Chromium (Selenium 截图)
+# 阶段2: 运行 - JRE 21 (Ubuntu noble) + Google Chrome
 # ============================================
 FROM eclipse-temurin:21-jre
 
-# 安装 Chromium 及其依赖（Selenium 网页截图用）
-RUN apt-get update && \
-    apt-get install -y chromium --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+# 安装 Google Chrome 稳定版（Selenium 网页截图用）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl gnupg ca-certificates fonts-liberation \
+    && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
+        | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+        > /etc/apt/sources.list.d/google-chrome.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends google-chrome-stable \
+    && rm -rf /var/lib/apt/lists/*
 
-# 告诉 WebDriverManager 使用系统 Chromium
-ENV CHROME_BIN=/usr/bin/chromium
+# Chrome 可执行文件路径
+ENV CHROME_BIN=/usr/bin/google-chrome-stable
 
 # 创建非 root 用户
 RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
 
 WORKDIR /app
 
-# 从构建阶段复制 JAR
+# 从构建阶段复制 JAR（用通配符，避免写死 artifact 名）
 COPY --from=build /build/target/*.jar app.jar
 
 # 创建临时文件目录（代码生成产物、截图等）

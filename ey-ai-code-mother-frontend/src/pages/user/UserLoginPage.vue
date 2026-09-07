@@ -1,7 +1,5 @@
 <template>
-  <div id="userLoginPage">
-    <h2 class="title">鱼皮 AI 应用生成 - 用户登录</h2>
-    <div class="desc">不写一行代码，生成完整应用</div>
+  <AuthSplitLayout title="用户登录">
     <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
       <a-form-item name="userAccount" :rules="[{ required: true, message: '请输入账号' }]">
         <a-input v-model:value="formState.userAccount" placeholder="请输入账号" />
@@ -23,10 +21,11 @@
         <a-button type="primary" html-type="submit" style="width: 100%">登录</a-button>
       </a-form-item>
     </a-form>
-  </div>
+  </AuthSplitLayout>
 </template>
 <script lang="ts" setup>
 import { reactive } from 'vue'
+import AuthSplitLayout from '@/components/AuthSplitLayout.vue'
 import { userLogin } from '@/api/userController.ts'
 import { useLoginUserStore } from '@/stores/loginUser.ts'
 import { useRouter } from 'vue-router'
@@ -61,27 +60,9 @@ const handleSubmit = async (values: any) => {
 </script>
 
 <style scoped>
-#userLoginPage {
-  background: white;
-  max-width: 720px;
-  padding: 24px;
-  margin: 24px auto;
-}
-
-.title {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.desc {
-  text-align: center;
-  color: #bbb;
-  margin-bottom: 16px;
-}
-
 .tips {
   text-align: right;
-  color: #bbb;
+  color: #64748b;
   font-size: 13px;
   margin-bottom: 16px;
 }
