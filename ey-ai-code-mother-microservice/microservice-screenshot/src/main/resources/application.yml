@@ -1,0 +1,23 @@
+spring:
+  config:
+    # 导入项目根目录的 .env
+    import:
+      - optional:file:./.env[.properties]
+  application:
+    name: ey-ai-code-user
+  session:
+    store-type: redis
+    # session 30 天过期
+    timeout: 2592000
+server:
+  port: 8127
+  servlet:
+    context-path: /api
+# Tencent COS 对象存储服务
+cos:
+  client:
+    host: ${COS_HOST}
+    secretId: ${COS_SECRET_ID}
+    secretKey: ${COS_SECRET_KEY}
+    region: ${COS_REGION}
+    bucket: ${COS_BUCKET_NAME}
