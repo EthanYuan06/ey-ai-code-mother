@@ -1,6 +1,6 @@
 spring:
   application:
-    name: ey-ai-code-mother
+    name: ey-ai-code-app
   session:
     store-type: redis
     # session 30 天过期
@@ -18,7 +18,7 @@ spring:
       password:
       ttl: 3600
 server:
-  port: 8123
+  port: 8125
   servlet:
     context-path: /api
     # cookie 30 天过期

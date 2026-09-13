@@ -5,7 +5,7 @@ spring:
     import:
       - optional:file:./.env[.properties]
   application:
-    name: ey-ai-code-mother
+    name: ey-ai-code-user
   session:
     store-type: redis
     # session 30 天过期
