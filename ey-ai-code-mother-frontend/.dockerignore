@@ -3,6 +3,5 @@ dist/
 .git/
 .gitignore
 *.md
-.env.*
 .vscode/
 .idea/

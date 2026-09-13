@@ -76,6 +76,9 @@ services:
     restart: always
     ports:
       - "80:80"
+    volumes:
+      # 与后端共享部署产物卷（只读），nginx 直接托管已部署应用 /<deployKey>/
+      - app_tmp:/usr/share/nginx/tmp:ro
     depends_on:
       - backend
 

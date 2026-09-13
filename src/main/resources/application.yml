@@ -96,3 +96,9 @@ app:
   code-gen:
     # 工作流模式开关：true=使用工作流生成代码（默认），false=使用原模式生成代码
     workflow-enabled: true
+  deploy:
+    # 返回给用户浏览器访问的部署域名（本地开发默认走宿主机 80 端口的 nginx / frontend 容器）
+    host: ${DEPLOY_HOST:http://localhost}
+    # 容器内 headless Chrome 截图时使用的域名；留空表示复用 host
+    # Docker 环境下应覆盖为 compose 服务名（例如 http://frontend），避免 Chrome 在 backend 容器内访问 localhost:80 拒连
+    screenshot-host: ${DEPLOY_SCREENSHOT_HOST:}

@@ -17,8 +17,10 @@ RUN mvn package -DskipTests -B
 FROM eclipse-temurin:21-jre
 
 # 安装 Google Chrome 稳定版（Selenium 网页截图用）
+# fonts-noto-cjk：中文字体，避免 headless Chrome 截图时中文显示为方框（豆腐块）
+# fonts-noto-color-emoji：彩色 emoji 字体，避免截图时 emoji 显示为方框
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        curl gnupg ca-certificates fonts-liberation \
+        curl gnupg ca-certificates fonts-liberation fonts-noto-cjk fonts-noto-color-emoji \
     && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
         | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \

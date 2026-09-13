@@ -18,7 +18,9 @@ const props = defineProps<Props>()
 
 // 配置 markdown-it 实例
 const md: MarkdownIt = new MarkdownIt({
-  html: true,
+  // 禁止裸 HTML 透传：AI 回复中可能携带生成网页的源码（含 <style>），
+  // 若原样注入宿主 DOM 会污染全局样式、挤占页面布局，统一转义为文本展示
+  html: false,
   linkify: true,
   typographer: true,
   highlight: function (str: string, lang: string): string {
@@ -40,7 +42,10 @@ const md: MarkdownIt = new MarkdownIt({
 
 // 计算渲染后的 Markdown
 const renderedMarkdown = computed(() => {
-  return md.render(props.content)
+  // 代码围栏必须独立成行：修复进度文案与 ``` 粘连时代码块不被识别、
+  // 源码被当作裸 HTML 渲染进对话的问题（兼容历史消息）
+  const normalized = props.content.replace(/([^\n])```/g, '$1\n```')
+  return md.render(normalized)
 })
 </script>
 

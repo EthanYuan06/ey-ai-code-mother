@@ -13,3 +13,9 @@ spring:
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
+
+# Docker 环境下 headless Chrome 与 backend 同容器，localhost:80 没有服务监听；
+# 通过 compose 内部 DNS 指向 frontend(nginx) 容器完成截图
+app:
+  deploy:
+    screenshot-host: ${DEPLOY_SCREENSHOT_HOST:http://frontend}

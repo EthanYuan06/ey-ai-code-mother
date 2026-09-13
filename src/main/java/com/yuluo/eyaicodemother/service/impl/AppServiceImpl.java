@@ -79,6 +79,20 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
     @Value("${app.code-gen.workflow-enabled:true}")
     private boolean workflowEnabled;
 
+    /**
+     * 返回给用户浏览器的部署访问域名，例如 http://localhost 或 https://your-domain
+     */
+    @Value("${app.deploy.host:" + AppConstant.CODE_DEPLOY_HOST + "}")
+    private String deployHost;
+
+    /**
+     * 容器内 headless Chrome 截图时使用的域名。
+     * 留空表示与 {@link #deployHost} 一致（本地开发场景）；
+     * Docker 环境下会被覆盖为 http://frontend，避免 Chrome 在 backend 容器内访问 localhost:80 拒连。
+     */
+    @Value("${app.deploy.screenshot-host:}")
+    private String screenshotHost;
+
     @Override
     public Long createApp(AppAddRequest appAddRequest, User loginUser) {
         // 参数校验
@@ -152,6 +166,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                     // 解析工作流 SSE 事件，提取内容并转换为统一格式
                     String content = extractEventContent(sseEvent);
                     if (content != null && !content.isEmpty()) {
+                        // 拼接边界补换行：保证代码块的 ``` 围栏独立成行，
+                        // 避免与进度文案粘连导致前端 Markdown 把源码当裸 HTML 渲染
+                        if (aiResponseBuilder.length() > 0
+                                && aiResponseBuilder.charAt(aiResponseBuilder.length() - 1) != '\n') {
+                            content = "\n" + content;
+                        }
                         aiResponseBuilder.append(content);
                         sink.next(JSONUtil.toJsonStr(Map.of("d", content)));
                     }
@@ -200,12 +220,12 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
                 if (line.startsWith("data: ")) {
                     String jsonStr = line.substring(6);
                     cn.hutool.json.JSONObject jsonObj = JSONUtil.parseObj(jsonStr);
-                    // 根据不同事件类型提取内容
+                    // 根据不同事件类型提取内容（进度文案补尾换行，保证各自独立成行）
                     if (jsonObj.containsKey("message")) {
-                        return jsonObj.getStr("message");
+                        return jsonObj.getStr("message") + "\n";
                     }
                     if (jsonObj.containsKey("currentStep")) {
-                        return "[" + jsonObj.getStr("currentStep") + "] 完成";
+                        return "[" + jsonObj.getStr("currentStep") + "] 完成\n";
                     }
                 }
             }
@@ -267,10 +287,14 @@ public class AppServiceImpl extends ServiceImpl<AppMapper, App> implements AppSe
         updateApp.setDeployedTime(LocalDateTime.now());
         boolean updateResult = this.updateById(updateApp);
         ThrowUtils.throwIf(!updateResult, ErrorCode.SYSTEM_ERROR, "更新应用部署信息失败");
-        // 10. 构建应用访问 URL
-        String appDeployUrl = String.format("%s/%s/", AppConstant.CODE_DEPLOY_HOST, deployKey);
+        // 10. 构建应用访问 URL（返回给用户）与截图 URL（容器内 Chrome 使用）
+        String appDeployUrl = String.format("%s/%s/", deployHost, deployKey);
+        // Docker 环境下 screenshotHost 会被设为 http://frontend 等 compose 内部地址；本地开发留空则直接复用 appDeployUrl
+        String screenshotUrl = StrUtil.isNotBlank(screenshotHost)
+                ? String.format("%s/%s/", screenshotHost, deployKey)
+                : appDeployUrl;
         // 11. 异步生成截图并更新应用封面
-        generateAppScreenshotAsync(appId, appDeployUrl);
+        generateAppScreenshotAsync(appId, screenshotUrl);
         return appDeployUrl;
 
     }
