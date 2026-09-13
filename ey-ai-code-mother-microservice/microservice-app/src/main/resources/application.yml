@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: ey-ai-code-mother
+  session:
+    store-type: redis
+    # session 30 天过期
+    timeout: 2592000
+  # mysql
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/code_mother
+    username: root
+    password: 1234
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      ttl: 3600
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+    # cookie 30 天过期
+    session:
+      cookie:
+        max-age: 2592000
+# springdoc-openapi
+# http://localhost:8123/api/doc.html
+springdoc:
+  group-configs:
+    - group: 'default'
+      packages-to-scan: com.yuluo.eyaicodemother.controller
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+# 关闭自动转换，项目已将实体类字段和数据库字段均采用驼峰命名
+mybatis-flex:
+  configuration:
+    map-underscore-to-camel-case: false
+# lanchain4j 相关配置
+langchain4j:
+  open-ai:
+    chat-model:
+      base-url: ${DEEPSEEK_BASE_URL}
+      api-key: ${DEEPSEEK_API_KEY}
+      model-name: deepseek-v4-flash
+      log-requests: true
+      log-responses: true
+    streaming-chat-model:
+      base-url: ${DEEPSEEK_BASE_URL}
+      api-key: ${DEEPSEEK_API_KEY}
+      model-name: deepseek-v4-flash
+      log-requests: true
+      log-responses: true
+    # deepseek-v4-pro，默认开启 high 思考模式
+    reasoning-streaming-chat-model:
+      base-url: ${DEEPSEEK_BASE_URL}
+      api-key: ${DEEPSEEK_API_KEY}
+      model-name: deepseek-v4-pro
+      max-tokens: 32678
+      log-requests: false
+      log-responses: false
+    # qwen-3.7 flash
+    routing-chat-model:
+      base-url: ${DASHSCOPE_BASE_URL}
+      api-key: ${DASHSCOPE_API_KEY}
+      model-name: qwen3.7-flash
+      log-requests: false
+      log-responses: false
+# Pexels 图片搜索配置
+pexels:
+  api-key: ${PEXELS_API_KEY}
+# 阿里云 DashScope 配置
+dashscope:
+  api-key: ${DASHSCOPE_API_KEY}
+  image-model: wan2.2-t2i-flash
+# 应用配置
+app:
+  code-gen:
+    # 工作流模式开关：true=使用工作流生成代码（默认），false=使用原模式生成代码
+    workflow-enabled: true
+  deploy:
+    # 返回给用户浏览器访问的部署域名（本地开发默认走宿主机 80 端口的 nginx / frontend 容器）
+    host: ${DEPLOY_HOST:http://localhost}
+    # 容器内 headless Chrome 截图时使用的域名；留空表示复用 host
+    # Docker 环境下应覆盖为 compose 服务名（例如 http://frontend），避免 Chrome 在 backend 容器内访问 localhost:80 拒连
+    screenshot-host: ${DEPLOY_SCREENSHOT_HOST:}
