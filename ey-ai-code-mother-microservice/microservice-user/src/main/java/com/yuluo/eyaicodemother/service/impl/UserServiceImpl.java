@@ -15,6 +15,7 @@ import com.yuluo.eyaicodemother.model.vo.LoginUserVO;
 import com.yuluo.eyaicodemother.model.vo.UserVO;
 import com.yuluo.eyaicodemother.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
@@ -33,6 +34,8 @@ import static com.yuluo.eyaicodemother.constant.UserConstant.USER_LOGIN_STATE;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
+    @Value("${PASSWORD_SALT}")
+    private String SALT;
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
         // 1. 校验参数
@@ -190,7 +193,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public String getEncryptPassword(String userPassword) {
         // 盐值，混淆密码
-        final String SALT = System.getenv("PASSWORD_SALT");
         return DigestUtils.md5DigestAsHex((userPassword + SALT).getBytes(StandardCharsets.UTF_8));
     }
 }
