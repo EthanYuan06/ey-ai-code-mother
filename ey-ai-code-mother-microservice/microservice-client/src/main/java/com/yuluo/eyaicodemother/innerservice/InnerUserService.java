@@ -16,7 +16,7 @@ import static com.yuluo.eyaicodemother.constant.UserConstant.USER_LOGIN_STATE;
 /**
  * 内部使用的用户服务
  */
-public interface InnerUserService extends IService<User> {
+public interface InnerUserService {
 
     List<User> listByIds(Collection<? extends Serializable> ids);
 

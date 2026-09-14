@@ -1,11 +1,11 @@
-package com.yuluo.eyaicodeuser.aop;
+package com.yuluo.eyaicodemother.aop;
 
 import com.yuluo.eyaicodemother.annotation.AuthCheck;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
 import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.enums.UserRoleEnum;
-import com.yuluo.eyaicodeuser.service.UserService;
+import com.yuluo.eyaicodemother.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;

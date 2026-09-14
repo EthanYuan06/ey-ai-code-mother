@@ -1,4 +1,4 @@
-package com.yuluo.eyaicodeuser.service;
+package com.yuluo.eyaicodemother.service;
 
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.core.service.IService;

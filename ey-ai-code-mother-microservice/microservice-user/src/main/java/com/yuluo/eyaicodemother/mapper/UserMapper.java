@@ -1,4 +1,4 @@
-package com.yuluo.eyaicodeuser.mapper;
+package com.yuluo.eyaicodemother.mapper;
 
 import com.mybatisflex.core.BaseMapper;
 import com.yuluo.eyaicodemother.model.entity.User;

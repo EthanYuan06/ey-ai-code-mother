@@ -1,4 +1,9 @@
 spring:
+  config:
+    # 导入项目根目录的 .env（KEY=VALUE 格式，等同 properties）
+    # 解决在 IDEA 中直接启动时 ${COS_HOST} 等占位符无法解析的问题
+    import:
+      - optional:file:./.env[.properties]
   application:
     name: ey-ai-code-app
   session:
@@ -26,7 +31,6 @@ server:
       cookie:
         max-age: 2592000
 # springdoc-openapi
-# http://localhost:8123/api/doc.html
 springdoc:
   group-configs:
     - group: 'default'
@@ -40,6 +44,14 @@ knife4j:
 mybatis-flex:
   configuration:
     map-underscore-to-camel-case: false
+# Tencent COS 对象存储服务
+cos:
+  client:
+    host: ${COS_HOST}
+    secretId: ${COS_SECRET_ID}
+    secretKey: ${COS_SECRET_KEY}
+    region: ${COS_REGION}
+    bucket: ${COS_BUCKET_NAME}
 # lanchain4j 相关配置
 langchain4j:
   open-ai:
@@ -88,3 +100,15 @@ app:
     # 容器内 headless Chrome 截图时使用的域名；留空表示复用 host
     # Docker 环境下应覆盖为 compose 服务名（例如 http://frontend），避免 Chrome 在 backend 容器内访问 localhost:80 拒连
     screenshot-host: ${DEPLOY_SCREENSHOT_HOST:}
+# Dubbo
+dubbo:
+  registry:
+    address: nacos://127.0.0.1:8848
+    register-mode: instance
+  protocol:
+    name: tri
+    port: 50053
+  consumer:
+    timeout: 120000
+  provider:
+    timeout: 120000

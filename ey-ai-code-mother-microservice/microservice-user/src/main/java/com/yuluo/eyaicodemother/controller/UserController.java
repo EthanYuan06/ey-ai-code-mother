@@ -1,4 +1,4 @@
-package com.yuluo.eyaicodeuser.controller;
+package com.yuluo.eyaicodemother.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.mybatisflex.core.paginate.Page;
@@ -14,7 +14,7 @@ import com.yuluo.eyaicodemother.model.dto.user.*;
 import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.vo.LoginUserVO;
 import com.yuluo.eyaicodemother.model.vo.UserVO;
-import com.yuluo.eyaicodeuser.service.UserService;
+import com.yuluo.eyaicodemother.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

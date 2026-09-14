@@ -1,4 +1,4 @@
-package com.yuluo.eyaicodeuser.service.impl;
+package com.yuluo.eyaicodemother.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -7,13 +7,13 @@ import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.yuluo.eyaicodemother.exception.BusinessException;
 import com.yuluo.eyaicodemother.exception.ErrorCode;
-import com.yuluo.eyaicodeuser.mapper.UserMapper;
+import com.yuluo.eyaicodemother.mapper.UserMapper;
 import com.yuluo.eyaicodemother.model.dto.user.UserQueryRequest;
 import com.yuluo.eyaicodemother.model.entity.User;
 import com.yuluo.eyaicodemother.model.enums.UserRoleEnum;
 import com.yuluo.eyaicodemother.model.vo.LoginUserVO;
 import com.yuluo.eyaicodemother.model.vo.UserVO;
-import com.yuluo.eyaicodeuser.service.UserService;
+import com.yuluo.eyaicodemother.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;

@@ -44,11 +44,15 @@ knife4j:
 mybatis-flex:
   configuration:
     map-underscore-to-camel-case: false
-# Tencent COS 对象存储服务
-cos:
-  client:
-    host: ${COS_HOST}
-    secretId: ${COS_SECRET_ID}
-    secretKey: ${COS_SECRET_KEY}
-    region: ${COS_REGION}
-    bucket: ${COS_BUCKET_NAME}
+# Dubbo
+dubbo:
+  registry:
+    address: nacos://127.0.0.1:8848
+    register-mode: instance
+  protocol:
+    name: tri
+    port: 50051
+  consumer:
+    timeout: 60000
+  provider:
+    timeout: 60000

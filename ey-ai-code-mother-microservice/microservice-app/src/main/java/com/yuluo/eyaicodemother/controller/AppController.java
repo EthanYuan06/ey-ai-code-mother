@@ -51,9 +51,6 @@ public class AppController {
     @Resource
     private AppService appService;
     @Resource
-    @Lazy
-    private InnerUserService userService;
-    @Resource
     private ProjectDownloadService projectDownloadService;
 
     /**
