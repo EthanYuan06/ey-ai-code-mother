@@ -1,0 +1,251 @@
+# ============================================================================
+# ey-ai-code-mother 微服务编排
+#   基础设施：nacos（Dubbo 注册中心）、mysql、redis
+#   业务服务：user(8124) / app(8125，主后端) / screenshot(8127，需 Chrome)
+#   入口：frontend(nginx, 80) —— /api/user/** 转 user，其余 /api/** 转 app，
+#         并从共享卷 app_tmp 直接托管已部署应用 /<deployKey>/
+#
+# 说明：所有服务通过环境变量把 dubbo.registry.address 覆盖为 nacos://nacos:8848；
+#       app 服务额外激活 docker profile（application-docker.yml）指向 mysql/redis/frontend。
+# ============================================================================
+
+services:
+  # ----------------------------------------
+  # Nacos —— Dubbo 服务注册与发现（standalone + 内嵌 Derby）
+  # ----------------------------------------
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: code-mother-nacos
+    restart: always
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 128m
+      TZ: Asia/Shanghai
+    ports:
+      # 8848: HTTP/控制台；9848: Nacos 2.x 客户端 gRPC（= 主端口 + 1000）
+      - "${NACOS_HOST_PORT:-8848}:8848"
+      - "9848:9848"
+    volumes:
+      - nacos_data:/home/nacos/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ----------------------------------------
+  # MySQL 数据库（user 与 app 共用 code_mother 库）
+  # ----------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: code-mother-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: code_mother
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_HOST_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------
+  # Redis —— 缓存 & 共享 Session & 分布式限流(Redisson)
+  # ----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: code-mother-redis
+    restart: always
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------
+  # user 服务 —— 用户注册/登录/鉴权，Dubbo 提供者(InnerUserService)
+  # ----------------------------------------
+  user:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: user
+    container_name: code-mother-user
+    restart: always
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+      # Dubbo 注册中心指向 compose 内部 nacos 服务
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      # 启动容错：nacos 未就绪时不阻断启动，由 Dubbo 后台重试注册/订阅
+      DUBBO_REGISTRY_CHECK: "false"
+      DUBBO_CONSUMER_CHECK: "false"
+      # 数据源 / Redis 指向内部服务（relaxed binding 覆盖 application.yml）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/code_mother?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    networks:
+      default:
+        aliases:
+          - user.internal
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+
+  # ----------------------------------------
+  # screenshot 服务 —— Selenium 网页截图，Dubbo 提供者(InnerScreenshotService)
+  #   镜像内含 Google Chrome；无需数据库
+  # ----------------------------------------
+  screenshot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: screenshot
+    container_name: code-mother-screenshot
+    restart: always
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      # 启动容错：nacos 未就绪时不阻断启动，由 Dubbo 后台重试注册
+      DUBBO_REGISTRY_CHECK: "false"
+      DUBBO_CONSUMER_CHECK: "false"
+    depends_on:
+      nacos:
+        condition: service_started
+
+  # ----------------------------------------
+  # app 服务 —— 主后端（应用/对话历史/代码生成/静态预览），聚合调用 user 与 screenshot
+  # ----------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: code-mother-app
+    restart: always
+    env_file:
+      - .env
+    environment:
+      TZ: Asia/Shanghai
+      # 激活 application-docker.yml
+      SPRING_PROFILES_ACTIVE: docker
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      # 启动容错：nacos/提供者未就绪时不阻断启动，由 Dubbo 后台重试注册/订阅
+      DUBBO_REGISTRY_CHECK: "false"
+      DUBBO_CONSUMER_CHECK: "false"
+      # 数据源 / Redis（供 docker profile 占位符解析）
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: code_mother
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # 返回给用户浏览器的部署访问域名（生产请改为服务器公网地址/域名）
+      DEPLOY_HOST: ${DEPLOY_HOST:-http://localhost}
+      # 容器内 Chrome 截图访问的内部地址：经 frontend(nginx) 托管的部署产物
+      DEPLOY_SCREENSHOT_HOST: http://frontend
+    # 不暴露宿主机端口：统一经 Higress 网关访问（路由 /api/** → app:8125）
+    # 如需本机直连调试 Swagger，可临时取消下面注释：
+    # ports:
+    #   - "127.0.0.1:8125:8125"
+    volumes:
+      # 代码生成/部署产物写入 /app/tmp，并共享给 frontend 只读托管
+      - app_tmp:/app/tmp
+    networks:
+      default:
+        aliases:
+          - app.internal
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+      user:
+        condition: service_started
+      screenshot:
+        condition: service_started
+
+  # ----------------------------------------
+  # frontend —— Nginx 托管 Vue SPA + 反向代理 /api + 托管已部署应用
+  # ----------------------------------------
+  frontend:
+    build:
+      context: ../ey-ai-code-mother-frontend
+      dockerfile: Dockerfile
+    container_name: code-mother-frontend
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+    # 不暴露宿主机端口：仅经 Higress 网关访问（兜底路由 /** → frontend:80）
+    volumes:
+      # 用微服务专用 nginx 配置覆盖镜像内默认配置（纯静态托管 SPA + 作品，不再反代 API）
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # 与 app 服务共享部署产物卷（只读），直接托管已部署应用 /<deployKey>/
+      - app_tmp:/usr/share/nginx/tmp:ro
+    networks:
+      default:
+        aliases:
+          - frontend.internal
+    depends_on:
+      - app
+      - user
+
+  # ----------------------------------------
+  # Higress —— 云原生 API 网关（唯一对外入口）
+  #   all-in-one 单容器：内置 gateway + console + nacos（仅供 Higress 自身配置存储）
+  #   启动后在控制台（默认 http://localhost:8001）手动配「固定地址」路由：
+  #     /api/user/** → user:8124 ;  /api/** → app:8125 ;  /** → frontend:80
+  #   与微服务同处 compose 网络，故固定地址可直接写服务名。
+  # ----------------------------------------
+  higress:
+    image: higress-registry.cn-hangzhou.cr.aliyuncs.com/higress/all-in-one:latest
+    container_name: code-mother-higress
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+      O11Y: "on"
+    ports:
+      # 网关 HTTP / HTTPS / 控制台。本地默认 8080/8443/8001；
+      # 服务器在 .env 设 HIGRESS_HTTP_PORT=80、HIGRESS_HTTPS_PORT=443 以便域名直达
+      - "${HIGRESS_HTTP_PORT:-8080}:8080"
+      - "${HIGRESS_HTTPS_PORT:-8443}:8443"
+      - "${HIGRESS_CONSOLE_PORT:-8001}:8001"
+    volumes:
+      # 持久化 Higress 配置（路由/域名/证书），容器重建不丢失
+      - higress_data:/data
+
+volumes:
+  nacos_data:
+  mysql_data:
+  redis_data:
+  app_tmp:
+  higress_data:

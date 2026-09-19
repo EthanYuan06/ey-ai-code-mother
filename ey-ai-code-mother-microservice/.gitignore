@@ -1,0 +1,11 @@
+/.env
+/tmp/
+/microservice-ai/target/
+/microservice-app/target/
+/microservice-client/target/
+/microservice-common/target/
+/microservice-model/target/
+/microservice-screenshot/target/
+/microservice-user/target/
+
+/.idea/

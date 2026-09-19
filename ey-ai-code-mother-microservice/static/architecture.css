@@ -1,0 +1,200 @@
+/* ==========================================================================
+   ey-ai-code-mother 微服务架构分层可视化
+   - 单屏无滚动
+   - 左侧 6 层主流程 + 右侧公共基础层
+   ========================================================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+    color: #1f2937;
+}
+
+/* ------- 整体舞台：左主区 + 右公共层 ------- */
+.stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 14px;
+    padding: 16px 20px;
+    height: 100vh;
+}
+
+/* ------- 左侧：标题 + 6 层 ------- */
+.layers {
+    display: grid;
+    grid-template-rows: auto repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    min-height: 0;
+}
+
+.title-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 2px 6px 0;
+    flex-wrap: wrap;
+}
+
+.title-bar h1 {
+    margin: 0;
+    font-size: clamp(18px, 1.6vw, 24px);
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.5px;
+}
+
+/* ------- 单个层容器 ------- */
+.layer {
+    border-radius: 14px;
+    padding: 8px 14px 10px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    min-height: 0;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* 各层配色（浅色系，视觉柔和） */
+.l1 { background: #e3f0ff; }
+.l2 { background: #e0f7f4; }
+.l3 { background: #efe4ff; }
+.l4 { background: #fff1de; }
+.l5 { background: #ffe4ee; }
+.l6 { background: #e6f7e0; }
+
+/* 层间向下箭头（最后一层不显示） */
+.layer:not(.l6)::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -9px;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid rgba(15, 23, 42, 0.35);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* ------- 右侧公共基础层 ------- */
+.common-layer {
+    background: #eceff3;
+    border-radius: 14px;
+    padding: 10px 12px 12px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* ------- 层标题 ------- */
+.layer-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: clamp(12px, 1vw, 15px);
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    color: #fff;
+    font-size: clamp(10px, 0.75vw, 12px);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+}
+
+/* ------- 技术标签容器：充满所在层的剩余高度，避免大片空白 ------- */
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+    align-content: stretch;
+    align-items: stretch;
+    min-height: 0;
+}
+
+/* 公共层：纵向排布，均分高度 */
+.chips-vertical {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 8px;
+    flex: 1;
+    align-content: stretch;
+}
+
+/* ------- 单个技术芯片：同行内均分宽度并垂直居中 ------- */
+.chip {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-size: clamp(11px, 0.85vw, 13px);
+    font-weight: 500;
+    color: #1f2937;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    line-height: 1.4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* 公共层芯片：占满宽度，均分列高 */
+.chips-vertical .chip {
+    width: 100%;
+    flex: 1 1 0;
+    padding: 4px 8px;
+}
+
+/* L4 微服务层芯片较多，限制最小宽以允许自然换行 */
+.l4 .chip {
+    flex: 1 1 90px;
+}
+
+/* L5 AI 层长文本芯片，保证换行后仍充满行宽 */
+.l5 .chip {
+    flex: 1 1 140px;
+}
+
+/* ------- 窄屏适配（<1100px 时收紧） ------- */
+@media (max-width: 1100px) {
+    .stage {
+        grid-template-columns: minmax(0, 1fr) 200px;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+    .chip {
+        padding: 4px 8px;
+    }
+    .l4 .chip {
+        flex: 1 1 70px;
+    }
+    .l5 .chip {
+        flex: 1 1 110px;
+    }
+}

@@ -1,0 +1,33 @@
+# ============================================
+# 微服务镜像构建上下文忽略清单
+# 仅 pom.xml 与 microservice-*/src 会被 COPY 进构建阶段，
+# 以下条目用于减小发送到 Docker 守护进程的上下文体积、避免污染构建。
+# ============================================
+
+# 构建产物
+**/target/
+**/*.jar
+**/*.jar.original
+
+# IDE / 版本控制
+.idea/
+**/.idea/
+*.iml
+**/*.iml
+.git/
+.gitignore
+
+# 运行时临时产物
+tmp/
+**/tmp/
+logs/
+**/*.log
+
+# 环境变量与密钥（运行时通过 env_file 注入，勿打进镜像）
+.env
+.env.*
+
+# 编排/脚本/文档（由 docker 直接按路径读取，无需进入上下文）
+docker-compose.yml
+deploy.sh
+README.md

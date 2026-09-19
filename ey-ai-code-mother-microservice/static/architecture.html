@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Zero Studio 架构图</title>
+    <link rel="stylesheet" href="./architecture.css">
+</head>
+<body>
+<div class="stage">
+    <!-- 左侧：主流程 6 层（自上而下模拟用户全流程） -->
+    <div class="layers">
+        <header class="title-bar">
+            <h1>Code Zero Studio 架构图</h1>
+        </header>
+
+        <section class="layer l1">
+            <div class="layer-title"><span class="tag">L1</span>用户接入层</div>
+            <div class="chips">
+                <span class="chip">Edge / Chrome 浏览器</span>
+            </div>
+        </section>
+
+        <section class="layer l2">
+            <div class="layer-title"><span class="tag">L2</span>前端交互层</div>
+            <div class="chips">
+                <span class="chip">Vue 3</span>
+                <span class="chip">Vite</span>
+                <span class="chip">Pinia</span>
+                <span class="chip">Axios</span>
+                <span class="chip">SSE</span>
+            </div>
+        </section>
+
+        <section class="layer l3">
+            <div class="layer-title"><span class="tag">L3</span>网关路由层</div>
+            <div class="chips">
+                <span class="chip">Higress</span>
+                <span class="chip">Nginx</span>
+            </div>
+        </section>
+
+        <section class="layer l4">
+            <div class="layer-title"><span class="tag">L4</span>微服务层</div>
+            <div class="chips">
+                <span class="chip">user</span>
+                <span class="chip">app</span>
+                <span class="chip">screenshot</span>
+                <span class="chip">ai</span>
+                <span class="chip">common</span>
+                <span class="chip">model</span>
+                <span class="chip">client</span>
+                <span class="chip">Spring Cloud Alibaba</span>
+                <span class="chip">Dubbo</span>
+                <span class="chip">Nacos 注册中心</span>
+            </div>
+        </section>
+
+        <section class="layer l5">
+            <div class="layer-title"><span class="tag">L5</span>AI 能力层</div>
+            <div class="chips">
+                <span class="chip">LangChain4j</span>
+                <span class="chip">LangGraph4j 工作流</span>
+                <span class="chip">DeepSeek V4 Flash（通用代码生成）</span>
+                <span class="chip">DeepSeek V4 Pro 推理模式（Vue 生成模式）</span>
+                <span class="chip">Qwen3.7-Flash 路由</span>
+                <span class="chip">DashScope SDK 文生图</span>
+            </div>
+        </section>
+
+        <section class="layer l6">
+            <div class="layer-title"><span class="tag">L6</span>数据与产物层</div>
+            <div class="chips">
+                <span class="chip">MySQL</span>
+                <span class="chip">Redis（登录态 / 对话缓存）</span>
+                <span class="chip">MyBatis-Flex</span>
+                <span class="chip">Redisson（限流）</span>
+                <span class="chip">腾讯云 COS</span>
+            </div>
+        </section>
+    </div>
+
+    <!-- 右侧：公共基础层，纵向贯穿 -->
+    <aside class="common-layer">
+        <div class="layer-title"><span class="tag">公共</span>基础层</div>
+        <div class="chips chips-vertical">
+            <span class="chip">Java 21</span>
+            <span class="chip">Spring Boot</span>
+            <span class="chip">Spring AOP 权限校验</span>
+            <span class="chip">Hutool</span>
+            <span class="chip">Knife4j</span>
+            <span class="chip">Selenium 网页截图</span>
+            <span class="chip">Docker</span>
+        </div>
+    </aside>
+</div>
+</body>
+</html>
