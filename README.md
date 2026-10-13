@@ -1,4 +1,4 @@
-<div align="center">   <img src="https://cdn.nlark.com/yuque/0/2026/jpeg/56443233/1788829964508-bd8a020d-7775-4921-bc2e-989cd378c428.jpeg" width="200"/>   <h1>Code Zero Studio</h1> </div>
+<div align="center">   <img src="./image/logo.png" width="200"/>   <h1>Code Zero Studio</h1> </div>
 
 
 
@@ -61,41 +61,41 @@ Code Zero Studio ，基于 AI 的对话式零代码 Web 应用生成平台。用
 + 宝塔 Linux（生产环境）
 
 【技术架构图】
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1789567839782-b20b685d-0022-4e4f-b38a-a09db706a669.png)
+![](./image/infrastructure.png)
 
 ## 💻 项目演示
 【登录页】用户初次访问项目，需要注册登录
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1788788107680-b41a867a-fb2c-42cc-999a-0236712d68cc.png)
+![](./image/login.png)
 
 
 
 【主页】已登录用户访问的首页
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1788789174402-85a1db64-9db3-4752-b924-e3be46de5cf1.png)
+![](./image/main.png)
 
 
 
 【个人作品与精选】展示用户个人作品，以及其他用户的精选作品
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1789024897630-9f252d3b-b3f6-4cfa-8a3d-90492c534d3e.png)
+![](./image/my-work.png)
 
 
 
 【制作界面】在此处，用户可使用本项目核心功能：对话交互式 AI 开发应用。界面会实时显示工作流的执行进度，执行完成后将静态页面实时展示在右侧，接下来可进行选中编辑。
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1788958304098-442cac35-b817-4858-bc95-79ecece713e1.png)
+![](./image/chat-page.png)
 
 
 
 【可视化编辑】用户能针对不符合需求的网页元素进行选中，并与 AI 进行多轮对话，直到网页效果让用户满意为止。
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1789034236756-66eb4f77-b02d-45b4-b8fa-96d8a5c79392.png)
+![](./image/fix-service.png)
 
 
 
 【删除选中元素，秒级修改】
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1789034278381-1f78da5e-39a0-4545-99de-8a65181d9625.png)
+![](./image/after-fix.png)
 
 
 
 【一键部署】网页制作完成后，可通过一键部署获取公网链接，让别人访问你自己的作品
-![](https://cdn.nlark.com/yuque/0/2026/png/56443233/1789003924485-13eb65c8-1162-4470-8531-756ca3a3f3f3.png)
+![](./image/fast-deploy.png)
 
 ## ✨ 核心亮点
 + 【项目架构】
