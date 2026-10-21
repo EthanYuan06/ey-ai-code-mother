@@ -15,8 +15,10 @@ import org.bsc.langgraph4j.prebuilt.MessagesState;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
@@ -25,6 +27,9 @@ import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
  */
 @Slf4j
 public class ImageCollectorNode {
+
+    /** 单个图片收集任务的超时时间（秒）：超时按空结果兜底，避免个别任务卡死拖垮整体 */
+    private static final long TASK_TIMEOUT_SECONDS = 30;
 
     public static AsyncNodeAction<MessagesState<String>> create() {
         return node_async(state -> {
@@ -57,24 +62,39 @@ public class ImageCollectorNode {
                 if (plan.getContentImageTasks() != null) {
                     ImageSearchTool imageSearchTool = SpringContextUtil.getBean(ImageSearchTool.class);
                     for (ImageCollectionPlan.ImageSearchTask task : plan.getContentImageTasks()) {
-                        futures.add(CompletableFuture.supplyAsync(() ->
-                                imageSearchTool.searchContentImages(task.query()), imageCollectorExecutor));
+                        futures.add(CompletableFuture
+                                .supplyAsync(() -> imageSearchTool.searchContentImages(task.query()), imageCollectorExecutor)
+                                .orTimeout(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                                .exceptionally(ex -> {
+                                    log.error("内容图片搜索失败, query={}, 原因: {}", task.query(), ex.getMessage());
+                                    return Collections.emptyList();
+                                }));
                     }
                 }
                 // 并发执行插画图片搜索
                 if (plan.getIllustrationTasks() != null) {
                     UndrawIllustrationTool illustrationTool = SpringContextUtil.getBean(UndrawIllustrationTool.class);
                     for (ImageCollectionPlan.IllustrationTask task : plan.getIllustrationTasks()) {
-                        futures.add(CompletableFuture.supplyAsync(() ->
-                                illustrationTool.searchIllustrations(task.query()), imageCollectorExecutor));
+                        futures.add(CompletableFuture
+                                .supplyAsync(() -> illustrationTool.searchIllustrations(task.query()), imageCollectorExecutor)
+                                .orTimeout(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                                .exceptionally(ex -> {
+                                    log.error("插画图片搜索失败, query={}, 原因: {}", task.query(), ex.getMessage());
+                                    return Collections.emptyList();
+                                }));
                     }
                 }
                 // 并发执行Logo生成
                 if (plan.getLogoTasks() != null) {
                     LogoGeneratorTool logoTool = SpringContextUtil.getBean(LogoGeneratorTool.class);
                     for (ImageCollectionPlan.LogoTask task : plan.getLogoTasks()) {
-                        futures.add(CompletableFuture.supplyAsync(() ->
-                                logoTool.generateLogos(task.description()), imageCollectorExecutor));
+                        futures.add(CompletableFuture
+                                .supplyAsync(() -> logoTool.generateLogos(task.description()), imageCollectorExecutor)
+                                .orTimeout(TASK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                                .exceptionally(ex -> {
+                                    log.error("Logo 生成失败, description={}, 原因: {}", task.description(), ex.getMessage());
+                                    return Collections.emptyList();
+                                }));
                     }
                 }
 
