@@ -12,6 +12,7 @@ import com.yuluo.eyaicodemother.utils.SpringContextUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.bsc.langgraph4j.action.AsyncNodeAction;
 import org.bsc.langgraph4j.prebuilt.MessagesState;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,10 @@ public class ImageCollectorNode {
                 ImageCollectionPlan plan = planService.planImageCollection(originalPrompt);
                 log.info("获取到图片收集计划，开始并发执行");
 
+                // 获取图片收集专用线程池
+                ThreadPoolTaskExecutor imageCollectorExecutor =
+                        SpringContextUtil.getBean("imageCollectorExecutor", ThreadPoolTaskExecutor.class);
+
                 // 第二步：并发执行各种图片收集任务
                 List<CompletableFuture<List<ImageResource>>> futures = new ArrayList<>();
                 // 并发执行内容图片搜索
@@ -53,7 +58,7 @@ public class ImageCollectorNode {
                     ImageSearchTool imageSearchTool = SpringContextUtil.getBean(ImageSearchTool.class);
                     for (ImageCollectionPlan.ImageSearchTask task : plan.getContentImageTasks()) {
                         futures.add(CompletableFuture.supplyAsync(() ->
-                                imageSearchTool.searchContentImages(task.query())));
+                                imageSearchTool.searchContentImages(task.query()), imageCollectorExecutor));
                     }
                 }
                 // 并发执行插画图片搜索
@@ -61,7 +66,7 @@ public class ImageCollectorNode {
                     UndrawIllustrationTool illustrationTool = SpringContextUtil.getBean(UndrawIllustrationTool.class);
                     for (ImageCollectionPlan.IllustrationTask task : plan.getIllustrationTasks()) {
                         futures.add(CompletableFuture.supplyAsync(() ->
-                                illustrationTool.searchIllustrations(task.query())));
+                                illustrationTool.searchIllustrations(task.query()), imageCollectorExecutor));
                     }
                 }
                 // 并发执行Logo生成
@@ -69,7 +74,7 @@ public class ImageCollectorNode {
                     LogoGeneratorTool logoTool = SpringContextUtil.getBean(LogoGeneratorTool.class);
                     for (ImageCollectionPlan.LogoTask task : plan.getLogoTasks()) {
                         futures.add(CompletableFuture.supplyAsync(() ->
-                                logoTool.generateLogos(task.description())));
+                                logoTool.generateLogos(task.description()), imageCollectorExecutor));
                     }
                 }
 
